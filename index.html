@@ -25,44 +25,90 @@
 
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Space Mono', monospace; overflow: hidden; }
 
-  /* HEADER */
+  /* ── HEADER ── */
   #header {
-    height: 52px;
+    height: 64px;
     background: var(--panel);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    padding: 0 18px;
-    gap: 24px;
+    padding: 0 22px;
+    gap: 32px;
     position: relative;
     z-index: 10;
+    flex-shrink: 0;
   }
-  #logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: var(--gold); letter-spacing: -0.5px; white-space: nowrap; }
+
+  #logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--gold);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    line-height: 1;
+  }
   #logo span { color: var(--text-dim); font-weight: 400; }
-  .stat { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-  .stat b { color: var(--text); font-weight: 700; }
-  .blink { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: blink 1.4s infinite; }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .stat-label {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .stat-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.red { color: var(--red); }
+
+  .stat-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: blink 1.4s infinite;
+    flex-shrink: 0;
+  }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
   #add-btn {
     margin-left: auto;
     background: var(--gold);
     color: #000;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 20px;
     font-family: 'Space Mono', monospace;
     font-weight: 700;
     font-size: 11px;
     cursor: pointer;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     transition: opacity 0.15s;
     white-space: nowrap;
+    height: 40px;
+    display: flex;
+    align-items: center;
   }
   #add-btn:hover { opacity: 0.85; }
 
-  /* LAYOUT */
-  #app { display: flex; height: calc(100vh - 52px); }
+  /* ── LAYOUT ── */
+  #app { display: flex; height: calc(100vh - 64px); }
 
-  /* SIDEBAR */
+  /* ── SIDEBAR ── */
   #sidebar {
     width: 272px;
     min-width: 272px;
@@ -73,15 +119,48 @@
     overflow: hidden;
     z-index: 2;
   }
-  #sidebar-title { padding: 12px 14px 10px; border-bottom: 1px solid var(--border); font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; }
-  #filter-row { display: flex; gap: 5px; padding: 9px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-  .filter-btn { font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; padding: 3px 7px; background: none; border: 1px solid var(--border2); color: var(--text-dim); cursor: pointer; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.15s; }
+  #sidebar-title {
+    padding: 13px 14px 11px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  #filter-row {
+    display: flex;
+    gap: 5px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 7px;
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--text-dim);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
   .filter-btn:hover, .filter-btn.active { border-color: var(--gold); color: var(--gold); }
+
   #list { overflow-y: auto; flex: 1; }
   #list::-webkit-scrollbar { width: 3px; }
   #list::-webkit-scrollbar-thumb { background: var(--border2); }
 
-  .card { padding: 11px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .card {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
   .card:hover { background: #141414; }
   .card.active { background: var(--gold-dim); border-left: 2px solid var(--gold); padding-left: 12px; }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 3px; }
@@ -99,64 +178,128 @@
   .votes { font-size: 10px; color: var(--text-dim); margin-left: auto; }
   .votes b { color: var(--gold); }
 
-  /* MAP */
-  #map { flex: 1; }
+  /* ── MAP ── */
+  #map { flex: 1; position: relative; }
 
-  /* Mapbox popup custom style */
+  /* ── MARKER ── fix: no transform, use will-change ── */
+  .sb-marker {
+    position: relative;
+    cursor: pointer;
+    will-change: transform;
+  }
+  .sb-marker-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.4);
+    transition: width 0.15s, height 0.15s, margin 0.15s, box-shadow 0.15s;
+    position: relative;
+    z-index: 1;
+  }
+  .sb-marker-dot.gold-spot {
+    width: 15px;
+    height: 15px;
+  }
+  .sb-marker:hover .sb-marker-dot,
+  .sb-marker.active .sb-marker-dot {
+    width: 18px;
+    height: 18px;
+    margin: -3px;
+  }
+  .sb-marker-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+  .sb-marker:hover .sb-marker-ring,
+  .sb-marker.active .sb-marker-ring {
+    opacity: 0.5;
+  }
+
+  /* ── AIRBNB-STYLE POPUP ── */
+  .sb-popup {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    padding: 0;
+    font-family: 'Space Mono', monospace;
+    min-width: 220px;
+    max-width: 260px;
+    position: relative;
+  }
+  .sb-popup-type {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 12px 0;
+    margin-bottom: 3px;
+  }
+  .sb-popup-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    padding: 0 12px;
+    line-height: 1.3;
+    margin-bottom: 3px;
+  }
+  .sb-popup-city {
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+  .sb-popup-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+  }
+  .sb-popup-dots { display: flex; gap: 3px; }
+  .sb-popup-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border2); }
+  .sb-popup-dot.on { background: var(--green); }
+  .sb-popup-votes { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+  .sb-popup-votes b { color: var(--gold); }
+  .sb-popup-btn {
+    display: block;
+    width: 100%;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 10px;
+    padding: 9px 12px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-align: center;
+    transition: opacity 0.15s;
+  }
+  .sb-popup-btn:hover { opacity: 0.85; }
+
+  /* Hide default mapbox popup chrome */
   .mapboxgl-popup-content {
-    background: var(--panel) !important;
-    border: 1px solid var(--border2) !important;
-    border-radius: 0 !important;
-    padding: 12px 14px !important;
-    font-family: 'Space Mono', monospace !important;
-    color: var(--text) !important;
+    padding: 0 !important;
+    background: transparent !important;
     box-shadow: none !important;
-    min-width: 180px;
+    border-radius: 0 !important;
   }
   .mapboxgl-popup-tip { display: none !important; }
-  .mapboxgl-popup-close-button { color: var(--text-dim) !important; font-size: 14px !important; right: 6px !important; top: 4px !important; background: none !important; }
-  .popup-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 3px; color: var(--text); }
-  .popup-city { font-size: 10px; color: var(--text-dim); margin-bottom: 8px; }
-  .popup-open { background: var(--gold); color: #000; border: none; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 10px; padding: 6px 12px; cursor: pointer; width: 100%; letter-spacing: 0.5px; }
-  .popup-open:hover { opacity: 0.85; }
-
-  /* DETAIL */
-  #detail {
-    width: 292px;
-    min-width: 292px;
-    background: var(--panel);
-    border-left: 1px solid var(--border);
-    display: none;
-    flex-direction: column;
-    overflow-y: auto;
-    z-index: 2;
+  .mapboxgl-popup-close-button {
+    display: none !important;
   }
-  #detail::-webkit-scrollbar { width: 3px; }
-  #detail::-webkit-scrollbar-thumb { background: var(--border2); }
-  #detail.open { display: flex; }
-  #detail-inner { padding: 16px; flex: 1; }
-  #detail-close { background: none; border: 1px solid var(--border2); color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 10px; padding: 4px 8px; cursor: pointer; margin-bottom: 14px; display: inline-block; }
-  #detail-close:hover { color: var(--text); border-color: var(--text-dim); }
-  .d-type { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
-  .d-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; line-height: 1.2; margin-bottom: 3px; }
-  .d-city { font-size: 10px; color: var(--text-dim); margin-bottom: 14px; }
-  .d-section { border-top: 1px solid var(--border); padding: 11px 0; }
-  .d-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
-  .d-text { font-size: 11px; line-height: 1.65; color: var(--text); }
-  .d-safety-row { display: flex; align-items: center; gap: 8px; }
-  .d-dots { display: flex; gap: 4px; }
-  .d-dots .dot { width: 7px; height: 7px; }
-  .d-safety-lbl { font-size: 10px; color: var(--text-dim); }
-  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
-  .tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border: 1px solid var(--border2); color: var(--text-dim); }
-  .d-vote { padding: 13px 0 0; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-  #vote-btn { background: none; border: 1px solid var(--gold); color: var(--gold); font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; padding: 7px 14px; cursor: pointer; transition: all 0.15s; }
-  #vote-btn:hover { background: var(--gold-dim); }
-  #vote-btn.voted { background: var(--gold); color: #000; }
-  #vote-count { font-size: 13px; font-weight: 700; }
-  #vote-count span { font-size: 10px; color: var(--text-dim); font-weight: 400; }
+  .mapboxgl-popup { z-index: 10; }
 
-  /* EMPTY PANEL */
+  /* ── DETAIL PANEL ── */
   #detail-empty {
     width: 292px;
     min-width: 292px;
@@ -174,41 +317,167 @@
   }
   #detail-empty .ico { font-size: 36px; margin-bottom: 14px; }
 
-  /* MODAL */
-  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 100; align-items: center; justify-content: center; }
+  #detail {
+    width: 292px;
+    min-width: 292px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 2;
+  }
+  #detail::-webkit-scrollbar { width: 3px; }
+  #detail::-webkit-scrollbar-thumb { background: var(--border2); }
+  #detail.open { display: flex; }
+  #detail-inner { padding: 16px; flex: 1; }
+
+  #detail-close {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-bottom: 14px;
+    display: inline-block;
+    transition: all 0.15s;
+  }
+  #detail-close:hover { color: var(--text); border-color: var(--text-dim); }
+
+  .d-type { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .d-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; line-height: 1.2; margin-bottom: 3px; }
+  .d-city { font-size: 10px; color: var(--text-dim); margin-bottom: 14px; }
+  .d-section { border-top: 1px solid var(--border); padding: 11px 0; }
+  .d-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
+  .d-text { font-size: 11px; line-height: 1.65; color: var(--text); }
+  .d-safety-row { display: flex; align-items: center; gap: 8px; }
+  .d-dots { display: flex; gap: 4px; }
+  .d-dots .dot { width: 7px; height: 7px; }
+  .d-safety-lbl { font-size: 10px; color: var(--text-dim); }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border: 1px solid var(--border2); color: var(--text-dim); }
+  .d-vote { padding: 13px 0 0; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  #vote-btn {
+    background: none;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #vote-btn:hover { background: var(--gold-dim); }
+  #vote-btn.voted { background: var(--gold); color: #000; }
+  #vote-count { font-size: 13px; font-weight: 700; }
+  #vote-count span { font-size: 10px; color: var(--text-dim); font-weight: 400; }
+
+  /* ── MODAL ── */
+  #modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
   #modal-overlay.open { display: flex; }
-  #modal { background: var(--panel); border: 1px solid var(--border2); width: 450px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  #modal {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    width: 450px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
   #modal::-webkit-scrollbar { width: 3px; }
   #modal::-webkit-scrollbar-thumb { background: var(--border2); }
   .modal-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
   .modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; color: var(--gold); }
-  .modal-x { background: none; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; line-height: 1; padding: 0 2px; }
+  .modal-x { background: none; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; line-height: 1; }
   .modal-x:hover { color: var(--text); }
   .modal-body { padding: 16px; }
   .fg { margin-bottom: 12px; }
   .fl { display: block; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
-  .fi, .fs, .ft { width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; padding: 8px 10px; outline: none; transition: border-color 0.15s; }
+  .fi, .fs, .ft {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
   .fi:focus, .fs:focus, .ft:focus { border-color: var(--gold); }
   .ft { resize: vertical; min-height: 70px; }
   .fs option { background: var(--panel); }
   .frow { display: flex; gap: 10px; }
   .frow .fg { flex: 1; }
   .safety-opts { display: flex; gap: 6px; }
-  .sopt { flex: 1; padding: 7px 0; text-align: center; border: 1px solid var(--border2); font-size: 9px; cursor: pointer; color: var(--text-dim); transition: all 0.15s; font-family: 'Space Mono', monospace; }
+  .sopt {
+    flex: 1;
+    padding: 7px 0;
+    text-align: center;
+    border: 1px solid var(--border2);
+    font-size: 9px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.15s;
+    font-family: 'Space Mono', monospace;
+  }
   .sopt:hover { border-color: var(--green); color: var(--green); }
   .sopt.sel { border-color: var(--green); color: var(--green); background: rgba(74,158,106,0.1); }
   .fhint { font-size: 9px; color: var(--text-dim); margin-top: 4px; line-height: 1.5; }
-  #form-submit { width: 100%; background: var(--gold); color: #000; border: none; padding: 11px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 11px; cursor: pointer; letter-spacing: 1px; margin-top: 4px; transition: opacity 0.15s; }
+  #form-submit {
+    width: 100%;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    padding: 11px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+  }
   #form-submit:hover { opacity: 0.85; }
 
-  /* TOAST */
-  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--gold); color: var(--text); padding: 10px 16px; font-size: 11px; z-index: 200; transform: translateY(60px); opacity: 0; transition: all 0.22s; pointer-events: none; }
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    color: var(--text);
+    padding: 10px 16px;
+    font-size: 11px;
+    z-index: 200;
+    transform: translateY(60px);
+    opacity: 0;
+    transition: all 0.22s;
+    pointer-events: none;
+  }
   #toast.show { transform: translateY(0); opacity: 1; }
 
-  /* Mapbox UI overrides */
-  .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right { display: none; }
-  .mapboxgl-ctrl-top-right { top: 10px; right: 10px; }
-  .mapboxgl-ctrl-group { background: var(--panel) !important; border: 1px solid var(--border2) !important; border-radius: 0 !important; }
+  /* ── MAPBOX UI overrides ── */
+  .mapboxgl-ctrl-bottom-left,
+  .mapboxgl-ctrl-bottom-right { display: none; }
+  .mapboxgl-ctrl-top-right { top: 12px; right: 12px; }
+  .mapboxgl-ctrl-group {
+    background: var(--panel) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
   .mapboxgl-ctrl-group button { border-radius: 0 !important; }
   .mapboxgl-ctrl button .mapboxgl-ctrl-icon { filter: invert(0.7); }
 </style>
@@ -217,9 +486,31 @@
 
 <div id="header">
   <div id="logo">SleepingBag<span>.finance</span></div>
-  <div class="stat"><span class="blink"></span> <b id="stat-spots">0</b> spots</div>
-  <div class="stat"><b id="stat-votes">0</b> rekt campers</div>
-  <div class="stat">market mood: <b style="color:var(--red)">REKT</b></div>
+
+  <div class="stat-divider"></div>
+
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="live-dot"></div>
+    <div class="stat">
+      <div class="stat-label">Spots</div>
+      <div class="stat-value gold" id="stat-spots">0</div>
+    </div>
+  </div>
+
+  <div class="stat-divider"></div>
+
+  <div class="stat">
+    <div class="stat-label">Rekt campers</div>
+    <div class="stat-value" id="stat-votes">0</div>
+  </div>
+
+  <div class="stat-divider"></div>
+
+  <div class="stat">
+    <div class="stat-label">Market mood</div>
+    <div class="stat-value red">REKT</div>
+  </div>
+
   <button id="add-btn" onclick="openModal()">+ ADD SPOT</button>
 </div>
 
@@ -254,6 +545,7 @@
 
 </div>
 
+<!-- MODAL -->
 <div id="modal-overlay" onclick="closeModalOutside(event)">
   <div id="modal">
     <div class="modal-head">
@@ -298,7 +590,7 @@
         <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng" type="number" placeholder="2.35" step="0.0001"></div>
         <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
       </div>
-      <div class="fhint" style="margin-bottom:10px">Google Maps → правый клик на точке → первая строка = координаты</div>
+      <div class="fhint" style="margin-bottom:10px">Google Maps → правый клик → первая строка = координаты</div>
       <button id="form-submit" onclick="submitPlace()">APE IN — ADD SPOT</button>
     </div>
   </div>
@@ -309,6 +601,7 @@
 <script>
 mapboxgl.accessToken = 'pk.eyJ1Ijoia29kYWtnb2xkIiwiYSI6ImNtbmx3b2RzYTFkenkyb3NtYmlhcWZxeTQifQ.qJktiWrZBfMNJME-uHNh2w';
 
+// ── DATA ──
 const places = [
   { id:1,  name:"Barceloneta North End",      city:"Barcelona, Spain",       type:"beach",   desc:"Soft sand, warm nights May–Oct. 4G to watch your portfolio bleed all night. Mossos patrol at 3am but they've seen worse degens than you, fren.", safety:4, votes:312, tags:["wifi","4g","warm","scenic","police-occasional"], gold:true,  lat:41.385,  lng:2.196   },
   { id:2,  name:"Pompidou Rooftop Adjacent",  city:"Paris, France",           type:"rooftop", desc:"Pigeons will judge you. Panoramic view of the city you can no longer afford. Wind is brutal after midnight. Bring two sleeping bags, ser.", safety:2, votes:89,  tags:["scenic","windy","pigeons","security-risk"], gold:false, lat:48.861,  lng:2.352   },
@@ -333,6 +626,7 @@ let selectedSafety = 3;
 let nextId = 100;
 let votedIds = new Set();
 let markers = {};
+let activePopup = null;
 
 function typeColor(type) {
   return { rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[type] || '#888';
@@ -356,17 +650,90 @@ map.on('load', () => {
   updateStats();
 });
 
-map.on('click', () => { desel(); });
+// click on empty map = close popup + deselect
+map.on('click', () => {
+  closePopup();
+  desel();
+});
+
+// ── POPUP ──
+function closePopup() {
+  if (activePopup) {
+    activePopup.remove();
+    activePopup = null;
+  }
+}
+
+function showPopup(p) {
+  closePopup();
+  const col = typeColor(p.type);
+  const dots = Array(5).fill(0).map((_,i) =>
+    `<div class="sb-popup-dot ${i < p.safety ? 'on' : ''}"></div>`
+  ).join('');
+
+  const html = `
+    <div class="sb-popup">
+      <div class="sb-popup-type" style="color:${col}">${p.type}</div>
+      <div class="sb-popup-name">${p.gold ? '★ ' : ''}${p.name}</div>
+      <div class="sb-popup-city">${p.city}</div>
+      <div class="sb-popup-meta">
+        <div class="sb-popup-dots">${dots}</div>
+        <div class="sb-popup-votes"><b>${p.votes}</b> votes</div>
+      </div>
+      <button class="sb-popup-btn" onclick="selFromPopup(${p.id})">VIEW DETAILS →</button>
+    </div>
+  `;
+
+  activePopup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false,
+    offset: 16,
+    maxWidth: '260px'
+  })
+    .setLngLat([p.lng, p.lat])
+    .setHTML(html)
+    .addTo(map);
+}
+
+window.selFromPopup = function(id) {
+  closePopup();
+  sel(id, false);
+};
 
 // ── MARKERS ──
+// KEY FIX: use anchor:'center' and avoid CSS transform on hover
+// instead animate via padding/size trick to avoid Mapbox repositioning bug
 function makeMarkerEl(p) {
   const col = typeColor(p.type);
-  const size = p.gold ? 14 : 11;
-  const el = document.createElement('div');
-  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${col};box-shadow:0 0 0 3px ${col}44;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;`;
-  el.addEventListener('mouseenter', () => { el.style.transform='scale(1.5)'; el.style.boxShadow=`0 0 0 5px ${col}66`; });
-  el.addEventListener('mouseleave', () => { if(selectedId!==p.id){el.style.transform='scale(1)';el.style.boxShadow=`0 0 0 3px ${col}44`;} });
-  return el;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'sb-marker';
+  wrapper.setAttribute('data-id', p.id);
+
+  const dot = document.createElement('div');
+  dot.className = 'sb-marker-dot' + (p.gold ? ' gold-spot' : '');
+  dot.style.background = col;
+  dot.style.boxShadow = `0 0 0 3px ${col}33`;
+
+  const ring = document.createElement('div');
+  ring.className = 'sb-marker-ring';
+  ring.style.borderColor = col;
+
+  wrapper.appendChild(ring);
+  wrapper.appendChild(dot);
+
+  wrapper.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isActive = selectedId === p.id;
+    if (isActive) {
+      closePopup();
+      desel();
+    } else {
+      selMarker(p.id);
+      showPopup(p);
+    }
+  });
+
+  return wrapper;
 }
 
 function renderMarkers() {
@@ -374,61 +741,60 @@ function renderMarkers() {
   markers = {};
 
   const arr = currentFilter === 'all' ? places : places.filter(p => p.type === currentFilter);
+
   arr.forEach(p => {
     const el = makeMarkerEl(p);
+    // anchor:'center' is critical — avoids the drift bug
     const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
       .setLngLat([p.lng, p.lat])
       .addTo(map);
-
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      sel(p.id, true);
-    });
 
     markers[p.id] = { marker, el };
   });
 }
 
-function highlightMarker(id) {
+function setMarkerActive(id) {
   Object.entries(markers).forEach(([mid, { el }]) => {
-    const p = places.find(x => x.id === parseInt(mid));
-    if (!p) return;
-    const col = typeColor(p.type);
-    if (parseInt(mid) === id) {
-      el.style.transform = 'scale(1.8)';
-      el.style.boxShadow = `0 0 0 7px ${col}66`;
-    } else {
-      el.style.transform = 'scale(1)';
-      el.style.boxShadow = `0 0 0 3px ${col}44`;
-    }
+    el.classList.toggle('active', parseInt(mid) === id);
   });
 }
 
-// ── SELECT / DESELECT ──
-function sel(id, fly) {
+// ── SELECT ──
+function selMarker(id) {
+  selectedId = id;
+  setMarkerActive(id);
+  renderList();
+}
+
+function sel(id, fly = true) {
   selectedId = id;
   const p = places.find(x => x.id === id);
   if (!p) return;
 
+  setMarkerActive(id);
+
   if (fly) {
-    map.flyTo({ center: [p.lng, p.lat], zoom: Math.max(map.getZoom(), 10), duration: 800, essential: true });
+    map.flyTo({
+      center: [p.lng, p.lat],
+      zoom: Math.max(map.getZoom(), 10),
+      duration: 800,
+      essential: true
+    });
   }
 
-  highlightMarker(id);
   renderDetail(p);
   renderList();
 }
 
 function desel() {
-  if (!selectedId) return;
   selectedId = null;
-  highlightMarker(null);
+  setMarkerActive(null);
   document.getElementById('detail').classList.remove('open');
   document.getElementById('detail-empty').style.display = 'flex';
   renderList();
 }
 
-// ── DETAIL PANEL ──
+// ── DETAIL ──
 function renderDetail(p) {
   document.getElementById('detail-empty').style.display = 'none';
   document.getElementById('detail').classList.add('open');
@@ -436,10 +802,12 @@ function renderDetail(p) {
   const col = typeColor(p.type);
   const safeLabels = ['','extremely rekt','risky ser','degen approved','comfy homeless','ultra safe (tokyo tier)'];
   const voted = votedIds.has(p.id);
-  const dot5 = (n, c) => Array(5).fill(0).map((_,i)=>`<div class="dot ${i<n?'on':''}" style="${i<n?`background:${c}`:''}"></div>`).join('');
+  const dot5 = (n, c) => Array(5).fill(0).map((_,i) =>
+    `<div class="dot ${i<n?'on':''}" style="${i<n?`background:${c}`:''}"></div>`
+  ).join('');
 
   document.getElementById('detail-inner').innerHTML = `
-    <button id="detail-close" onclick="desel()">✕ CLOSE</button>
+    <button id="detail-close" onclick="closePopup();desel()">✕ CLOSE</button>
     <div class="d-type" style="color:${col}">${p.type.toUpperCase()}</div>
     <div class="d-name">${p.gold ? '★ ' : ''}${p.name}</div>
     <div class="d-city">${p.city}</div>
@@ -456,7 +824,7 @@ function renderDetail(p) {
     </div>
     <div class="d-section">
       <div class="d-label">Tags</div>
-      <div class="tags">${p.tags.map(t=>`<div class="tag">#${t}</div>`).join('')}</div>
+      <div class="tags">${p.tags.map(t => `<div class="tag">#${t}</div>`).join('')}</div>
     </div>
     <div class="d-vote">
       <button id="vote-btn" class="${voted?'voted':''}" onclick="vote(${p.id})">${voted?'✓ VOTED':'▲ VOTE'}</button>
@@ -482,7 +850,7 @@ function vote(id) {
 function renderList() {
   const arr = currentFilter === 'all' ? places : places.filter(p => p.type === currentFilter);
   const sorted = [...arr].sort((a,b) => b.votes - a.votes);
-  const dot5 = n => Array(5).fill(0).map((_,i)=>`<div class="dot ${i<n?'on':''}"></div>`).join('');
+  const dot5 = n => Array(5).fill(0).map((_,i) => `<div class="dot ${i<n?'on':''}"></div>`).join('');
 
   document.getElementById('list').innerHTML = sorted.map(p => `
     <div class="card ${p.id===selectedId?'active':''}" onclick="sel(${p.id}, true)">
@@ -504,7 +872,7 @@ function renderList() {
 
 function updateStats() {
   document.getElementById('stat-spots').textContent = places.length;
-  document.getElementById('stat-votes').textContent = places.reduce((a,b)=>a+b.votes,0).toLocaleString();
+  document.getElementById('stat-votes').textContent = places.reduce((a,b) => a+b.votes, 0).toLocaleString();
 }
 
 // ── FILTER ──
@@ -512,6 +880,7 @@ function setFilter(type, btn) {
   currentFilter = type;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  closePopup();
   if (selectedId) desel();
   renderMarkers();
   renderList();
@@ -520,7 +889,7 @@ function setFilter(type, btn) {
 // ── MODAL ──
 function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
-function closeModalOutside(e) { if (e.target===document.getElementById('modal-overlay')) closeModal(); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
 
 function setSafety(n) {
   selectedSafety = n;
@@ -540,9 +909,11 @@ function submitPlace() {
   if (isNaN(lat) || isNaN(lng)) { toast('ser — add coordinates (lat/lng)'); return; }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates ser'); return; }
 
-  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean) : ['degen'];
-  const p = { id: nextId++, name, city, type, desc, safety: selectedSafety, votes: 1, tags, gold: false, lat, lng };
+  const tags = tagsRaw
+    ? tagsRaw.split(',').map(t => t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean)
+    : ['degen'];
 
+  const p = { id: nextId++, name, city, type, desc, safety: selectedSafety, votes: 1, tags, gold: false, lat, lng };
   places.push(p);
   closeModal();
   toast('📍 Spot added! NGMI but at least you have a place to sleep.');
@@ -557,7 +928,7 @@ function submitPlace() {
 }
 
 // ── TOAST ──
-function toast(msg, dur=3000) {
+function toast(msg, dur = 3000) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
