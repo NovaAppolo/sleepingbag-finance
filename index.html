@@ -21,21 +21,24 @@
   --text-dim: #666;
   --border: #1e1e1e;
   --border2: #2a2a2a;
+  --header-h: 64px;
 }
 
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Space Mono', monospace; overflow: hidden; }
 
-/* ── HEADER ── */
+/* ══════════════════════════════
+   HEADER
+══════════════════════════════ */
 #header {
-  height: 64px;
+  height: var(--header-h);
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   padding: 0 22px;
-  gap: 0;
   position: relative;
-  z-index: 10;
+  z-index: 100;
+  gap: 0;
 }
 
 #logo {
@@ -45,28 +48,46 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   color: var(--gold);
   letter-spacing: -0.5px;
   white-space: nowrap;
-  margin-right: 28px;
+  margin-right: 24px;
+  flex-shrink: 0;
 }
 #logo span { color: #444; font-weight: 400; }
 
-.h-divider { width: 1px; height: 30px; background: var(--border2); margin: 0 24px; flex-shrink: 0; }
+.h-divider { width: 1px; height: 30px; background: var(--border2); margin: 0 20px; flex-shrink: 0; }
 
-.h-stat { display: flex; flex-direction: column; gap: 3px; }
+.h-stat { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
 .h-stat-label { font-size: 9px; color: var(--text-dim); letter-spacing: 1.2px; text-transform: uppercase; }
 .h-stat-value { font-size: 16px; font-weight: 700; line-height: 1; color: var(--text); }
 .h-stat-value.gold { color: var(--gold); }
 .h-stat-value.red  { color: var(--red); }
-
 .h-live { display: flex; align-items: center; gap: 8px; }
 .h-blink { width: 7px; height: 7px; border-radius: 50%; background: var(--red); animation: blink 1.4s infinite; flex-shrink: 0; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
+.h-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+#chat-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 0 16px;
+  height: 40px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#chat-btn:hover, #chat-btn.active { border-color: var(--gold); color: var(--gold); }
+
 #add-btn {
-  margin-left: auto;
   background: var(--gold);
   color: #000;
   border: none;
-  padding: 0 22px;
+  padding: 0 20px;
   height: 40px;
   font-family: 'Space Mono', monospace;
   font-weight: 700;
@@ -79,10 +100,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 #add-btn:hover { opacity: .85; }
 
-/* ── LAYOUT ── */
-#app { display: flex; height: calc(100vh - 64px); position: relative; }
+/* ══════════════════════════════
+   DESKTOP LAYOUT
+══════════════════════════════ */
+#app {
+  display: flex;
+  height: calc(100vh - var(--header-h));
+  position: relative;
+}
 
-/* ── SIDEBAR ── */
+/* SIDEBAR */
 #sidebar {
   width: 280px;
   min-width: 280px;
@@ -93,7 +120,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   overflow: hidden;
   z-index: 2;
 }
-
 #sidebar-top {
   padding: 13px 16px 11px;
   border-bottom: 1px solid var(--border);
@@ -104,7 +130,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
-
 #filter-row {
   display: flex;
   gap: 5px;
@@ -126,33 +151,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   transition: all .15s;
 }
 .fbtn:hover, .fbtn.on { border-color: var(--gold); color: var(--gold); }
-
 #list { overflow-y: auto; flex: 1; }
 #list::-webkit-scrollbar { width: 3px; }
 #list::-webkit-scrollbar-thumb { background: var(--border2); }
 
-.card {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background .1s;
-}
+.card { padding: 13px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; }
 .card:hover { background: #141414; }
 .card.active { background: var(--gold-dim); border-left: 2px solid var(--gold); padding-left: 14px; }
-
 .card-row1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 3px; }
 .card-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; color: var(--text); line-height: 1.3; }
-.ctag {
-  font-size: 8px; font-weight: 700;
-  padding: 2px 6px; border: 1px solid;
-  white-space: nowrap; flex-shrink: 0;
-  letter-spacing: .5px; text-transform: uppercase;
-}
+.ctag { font-size: 8px; font-weight: 700; padding: 2px 6px; border: 1px solid; white-space: nowrap; flex-shrink: 0; letter-spacing: .5px; text-transform: uppercase; }
 .t-rooftop { color: var(--gold); border-color: var(--gold); }
 .t-beach, .t-park, .t-forest { color: var(--green); border-color: var(--green); }
 .t-bridge { color: var(--red); border-color: var(--red); }
 .t-other { color: var(--text-dim); border-color: var(--text-dim); }
-
 .card-city { font-size: 10px; color: var(--text-dim); margin-bottom: 7px; }
 .card-row2 { display: flex; align-items: center; }
 .sdots { display: flex; gap: 3px; }
@@ -161,23 +173,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .cvotes { font-size: 10px; color: var(--text-dim); margin-left: auto; }
 .cvotes b { color: var(--gold); }
 
-/* ── MAP CONTAINER ── */
-#map-wrap {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
+/* MAP */
+#map-wrap { flex: 1; position: relative; overflow: hidden; }
 #map { width: 100%; height: 100%; }
 
-/* ── POPUP ── */
-#popup {
-  position: absolute;
-  z-index: 20;
-  pointer-events: none;
-  display: none;
-}
+/* POPUP */
+#popup { position: absolute; z-index: 20; pointer-events: none; display: none; }
 #popup.show { display: block; }
-
 .popup-box {
   position: absolute;
   background: #111;
@@ -186,19 +188,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   pointer-events: auto;
   transform: translate(-50%, calc(-100% - 18px));
 }
-/* Arrow */
 .popup-box::after {
   content: '';
   position: absolute;
-  bottom: -8px;
-  left: 50%;
+  bottom: -8px; left: 50%;
   transform: translateX(-50%) rotate(45deg);
   width: 14px; height: 14px;
   background: #111;
   border-right: 1px solid #333;
   border-bottom: 1px solid #333;
 }
-
 .pb-head { padding: 12px 14px 0; }
 .pb-type { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
 .pb-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); line-height: 1.3; margin-bottom: 3px; }
@@ -209,107 +208,239 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .pb-sd.on { background: var(--green); }
 .pb-votes { font-size: 10px; color: var(--text-dim); margin-left: auto; }
 .pb-votes b { color: var(--gold); }
-.pb-btn {
-  display: block;
-  width: 100%;
-  background: var(--gold);
-  color: #000;
-  border: none;
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
-  font-size: 10px;
-  padding: 10px;
-  cursor: pointer;
-  letter-spacing: .5px;
-  text-align: center;
-  transition: opacity .15s;
-}
+.pb-btn { display: block; width: 100%; background: var(--gold); color: #000; border: none; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 10px; padding: 10px; cursor: pointer; letter-spacing: .5px; text-align: center; transition: opacity .15s; }
 .pb-btn:hover { opacity: .85; }
 
-/* ── DETAIL PANEL ── */
-#right {
-  width: 300px;
-  min-width: 300px;
-  background: var(--panel);
-  border-left: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  z-index: 2;
-}
+/* RIGHT DETAIL */
+#right { width: 300px; min-width: 300px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; z-index: 2; }
 #right::-webkit-scrollbar { width: 3px; }
 #right::-webkit-scrollbar-thumb { background: var(--border2); }
-
-#right-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 28px;
-  color: var(--text-dim);
-  font-size: 12px;
-  line-height: 2;
-}
+#right-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px; color: var(--text-dim); font-size: 12px; line-height: 2; }
 #right-empty .ico { font-size: 40px; margin-bottom: 16px; }
 #right-detail { display: none; padding: 18px; }
 #right-detail.show { display: block; }
-
-.d-close {
-  background: none;
-  border: 1px solid var(--border2);
-  color: var(--text-dim);
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  padding: 5px 10px;
-  cursor: pointer;
-  margin-bottom: 16px;
-}
+.d-close { background: none; border: 1px solid var(--border2); color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 10px; padding: 5px 10px; cursor: pointer; margin-bottom: 16px; }
 .d-close:hover { color: var(--text); border-color: #555; }
 .d-badge { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 7px; }
 .d-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; line-height: 1.2; margin-bottom: 4px; }
 .d-city { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
-
 .d-sec { border-top: 1px solid var(--border); padding: 13px 0; }
 .d-lbl { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 7px; }
 .d-txt { font-size: 12px; line-height: 1.7; color: var(--text); }
-
 .d-srow { display: flex; align-items: center; gap: 10px; }
-.d-sdots { display: flex; gap: 4px; }
-.d-sd { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); }
-.d-sd.on { background: var(--green); }
 .d-slbl { font-size: 11px; color: var(--text-dim); }
-
 .d-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
 .d-tag { font-size: 9px; font-weight: 700; padding: 3px 7px; border: 1px solid var(--border2); color: var(--text-dim); }
-
 .d-vote-row { padding: 14px 0 0; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 14px; }
-#vote-btn {
-  background: none;
-  border: 1px solid var(--gold);
-  color: var(--gold);
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: all .15s;
-}
+#vote-btn { background: none; border: 1px solid var(--gold); color: var(--gold); font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; padding: 8px 16px; cursor: pointer; transition: all .15s; }
 #vote-btn:hover { background: var(--gold-dim); }
 #vote-btn.voted { background: var(--gold); color: #000; }
 #vote-count { font-size: 14px; font-weight: 700; }
 #vote-count span { font-size: 10px; color: var(--text-dim); font-weight: 400; }
 
-/* ── MODAL ── */
-#modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 100; align-items: center; justify-content: center; }
+/* ══════════════════════════════
+   MOBILE BOTTOM DRAWER
+══════════════════════════════ */
+#mob-drawer {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  z-index: 80;
+  border-radius: 16px 16px 0 0;
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  transform: translateY(calc(100% - 72px));
+  max-height: 82vh;
+  pointer-events: none;
+}
+#mob-drawer.expanded { transform: translateY(0); }
+
+#mob-handle-area {
+  padding: 12px 16px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+#mob-drawer.expanded #mob-handle-area { border-color: var(--border); }
+#mob-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 0 auto; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); }
+#mob-drawer-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; padding-top: 8px; }
+#mob-spot-count { font-size: 11px; color: var(--text-dim); margin-left: auto; padding-top: 8px; }
+#mob-spot-count b { color: var(--gold); }
+
+#mob-filter-row { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
+#mob-filter-row::-webkit-scrollbar { display: none; }
+.mob-fbtn { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; padding: 5px 10px; background: none; border: 1px solid var(--border2); color: var(--text-dim); cursor: pointer; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; transition: all .15s; flex-shrink: 0; }
+.mob-fbtn.on { border-color: var(--gold); color: var(--gold); }
+
+#mob-list { overflow-y: auto; flex: 1; }
+#mob-list::-webkit-scrollbar { width: 3px; }
+#mob-list::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* MOBILE BOTTOM NAV BUTTONS */
+#mob-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  z-index: 90;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 8px;
+}
+.mob-nav-btn {
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: color .15s;
+}
+.mob-nav-btn.active { color: var(--gold); }
+.mob-nav-icon { font-size: 18px; line-height: 1; }
+
+/* MOBILE DETAIL SHEET */
+#mob-detail {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--panel);
+  z-index: 85;
+  overflow-y: auto;
+  padding: 20px 20px 100px;
+}
+#mob-detail.show { display: block; }
+#mob-detail-close { background: none; border: 1px solid var(--border2); color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 11px; padding: 7px 14px; cursor: pointer; margin-bottom: 20px; }
+
+/* ══════════════════════════════
+   CHAT OVERLAY
+══════════════════════════════ */
+#chat-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,.7);
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+#chat-overlay.open { display: flex; }
+
+#chat-panel {
+  width: 380px;
+  height: calc(100vh - var(--header-h) - 20px);
+  max-height: 700px;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 0 20px 20px 0;
+}
+
+#chat-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chat-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); }
+.chat-subtitle { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+#chat-close { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; line-height: 1; }
+#chat-close:hover { color: var(--text); }
+
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#chat-messages::-webkit-scrollbar { width: 3px; }
+#chat-messages::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.chat-msg { display: flex; flex-direction: column; gap: 3px; }
+.chat-msg-meta { display: flex; align-items: baseline; gap: 8px; }
+.chat-msg-name { font-size: 10px; font-weight: 700; color: var(--gold); }
+.chat-msg-time { font-size: 9px; color: var(--text-dim); }
+.chat-msg-text { font-size: 12px; color: var(--text); line-height: 1.5; background: #141414; border: 1px solid var(--border); padding: 8px 10px; }
+.chat-msg.system .chat-msg-text { color: var(--text-dim); font-size: 10px; background: none; border: none; padding: 0; text-align: center; }
+
+#chat-input-area {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+#chat-name-input {
+  width: 90px;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color .15s;
+}
+#chat-name-input:focus { border-color: var(--gold); }
+#chat-text-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color .15s;
+  resize: none;
+  height: 38px;
+}
+#chat-text-input:focus { border-color: var(--gold); }
+#chat-send {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: opacity .15s;
+  flex-shrink: 0;
+}
+#chat-send:hover { opacity: .85; }
+
+/* ══════════════════════════════
+   MODAL
+══════════════════════════════ */
+#modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 300; align-items: center; justify-content: center; }
 #modal-bg.open { display: flex; }
 #modal { background: var(--panel); border: 1px solid var(--border2); width: 460px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
 #modal::-webkit-scrollbar { width: 3px; }
 #modal::-webkit-scrollbar-thumb { background: var(--border2); }
 .mhead { padding: 15px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 .mtitle { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: var(--gold); }
-.mx { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; line-height: 1; }
+.mx { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; }
 .mx:hover { color: var(--text); }
 .mbody { padding: 18px; }
 .fg { margin-bottom: 13px; }
@@ -328,20 +459,65 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #fsub { width: 100%; background: var(--gold); color: #000; border: none; padding: 12px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 12px; cursor: pointer; letter-spacing: 1px; margin-top: 5px; transition: opacity .15s; }
 #fsub:hover { opacity: .85; }
 
-/* ── TOAST ── */
-#toast { position: fixed; bottom: 22px; right: 22px; background: var(--panel); border: 1px solid var(--gold); color: var(--text); padding: 11px 18px; font-size: 12px; z-index: 200; transform: translateY(60px); opacity: 0; transition: all .22s; pointer-events: none; }
-#toast.show { transform: translateY(0); opacity: 1; }
+/* TOAST */
+#toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--panel); border: 1px solid var(--gold); color: var(--text); padding: 11px 20px; font-size: 12px; z-index: 400; opacity: 0; transition: all .22s; pointer-events: none; white-space: nowrap; }
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-/* ── MAPBOX overrides ── */
+/* Mapbox overrides */
 .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right { display: none; }
 .mapboxgl-ctrl-top-right { top: 12px; right: 12px; }
 .mapboxgl-ctrl-group { background: #111 !important; border: 1px solid #2a2a2a !important; border-radius: 0 !important; }
 .mapboxgl-ctrl-group button { border-radius: 0 !important; }
 .mapboxgl-ctrl button .mapboxgl-ctrl-icon { filter: invert(.7); }
+
+/* ══════════════════════════════
+   MOBILE MEDIA QUERY
+══════════════════════════════ */
+@media (max-width: 768px) {
+  :root { --header-h: 52px; }
+
+  /* Header: only logo + 2 buttons */
+  #logo { font-size: 15px; margin-right: auto; }
+  .h-divider { display: none; }
+  .h-live, .h-stat { display: none; }
+  .h-right { gap: 8px; }
+  #chat-btn { font-size: 10px; padding: 0 12px; height: 34px; }
+  #add-btn { font-size: 10px; padding: 0 12px; height: 34px; }
+  #header { padding: 0 14px; }
+
+  /* Hide desktop sidebar and right panel */
+  #sidebar { display: none; }
+  #right { display: none; }
+
+  /* Map takes full screen */
+  #map-wrap { flex: 1; }
+
+  /* Show mobile drawer */
+  #mob-drawer { display: flex; flex-direction: column; pointer-events: auto; }
+
+  /* Show mobile bottom nav */
+  #mob-nav { display: flex; }
+
+  /* Adjust app height for bottom nav */
+  #app { height: calc(100vh - var(--header-h) - 64px); }
+
+  /* Chat panel full screen on mobile */
+  #chat-panel { width: 100%; height: 100%; margin: 0; border: none; border-radius: 0; }
+  #chat-overlay { align-items: flex-start; justify-content: flex-start; }
+
+  /* Modal full width */
+  #modal { max-width: 100vw; width: 100%; max-height: 95vh; border-radius: 16px 16px 0 0; }
+  #modal-bg { align-items: flex-end; }
+
+  /* Popup smaller on mobile */
+  .popup-box { width: 200px; }
+  .pb-name { font-size: 12px; }
+}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div id="header">
   <div id="logo">SleepingBag<span>.finance</span></div>
 
@@ -366,21 +542,25 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="h-stat-value red">REKT</div>
   </div>
 
-  <button id="add-btn" onclick="openModal()">+ ADD SPOT</button>
+  <div class="h-right">
+    <button id="chat-btn" onclick="toggleChat()">💬 CHAT</button>
+    <button id="add-btn" onclick="openModal()">+ ADD SPOT</button>
+  </div>
 </div>
 
+<!-- APP -->
 <div id="app">
 
-  <!-- SIDEBAR -->
+  <!-- DESKTOP SIDEBAR -->
   <div id="sidebar">
     <div id="sidebar-top">Rekt Atlas</div>
     <div id="filter-row">
-      <button class="fbtn on" onclick="setFilter('all',this)">ALL</button>
-      <button class="fbtn" onclick="setFilter('rooftop',this)">ROOF</button>
-      <button class="fbtn" onclick="setFilter('beach',this)">BEACH</button>
-      <button class="fbtn" onclick="setFilter('park',this)">PARK</button>
-      <button class="fbtn" onclick="setFilter('forest',this)">FOREST</button>
-      <button class="fbtn" onclick="setFilter('bridge',this)">BRIDGE</button>
+      <button class="fbtn on" onclick="setFilter('all',this,'desktop')">ALL</button>
+      <button class="fbtn" onclick="setFilter('rooftop',this,'desktop')">ROOF</button>
+      <button class="fbtn" onclick="setFilter('beach',this,'desktop')">BEACH</button>
+      <button class="fbtn" onclick="setFilter('park',this,'desktop')">PARK</button>
+      <button class="fbtn" onclick="setFilter('forest',this,'desktop')">FOREST</button>
+      <button class="fbtn" onclick="setFilter('bridge',this,'desktop')">BRIDGE</button>
     </div>
     <div id="list"></div>
   </div>
@@ -388,7 +568,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   <!-- MAP -->
   <div id="map-wrap">
     <div id="map"></div>
-    <!-- Popup positioned inside map-wrap so offset is correct -->
     <div id="popup">
       <div class="popup-box" id="popup-box">
         <div class="pb-head">
@@ -405,7 +584,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     </div>
   </div>
 
-  <!-- RIGHT PANEL -->
+  <!-- DESKTOP RIGHT PANEL -->
   <div id="right">
     <div id="right-empty">
       <div class="ico">🛌</div>
@@ -419,7 +598,66 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 </div>
 
-<!-- MODAL -->
+<!-- MOBILE DRAWER (bottom sheet with list) -->
+<div id="mob-drawer">
+  <div id="mob-handle-area" onclick="toggleDrawer()">
+    <div id="mob-handle"></div>
+    <div id="mob-drawer-title">Rekt Atlas</div>
+    <div id="mob-spot-count"><b id="mob-stat-spots">0</b> spots</div>
+  </div>
+  <div id="mob-filter-row">
+    <button class="mob-fbtn on" onclick="setFilter('all',this,'mobile')">ALL</button>
+    <button class="mob-fbtn" onclick="setFilter('rooftop',this,'mobile')">ROOF</button>
+    <button class="mob-fbtn" onclick="setFilter('beach',this,'mobile')">BEACH</button>
+    <button class="mob-fbtn" onclick="setFilter('park',this,'mobile')">PARK</button>
+    <button class="mob-fbtn" onclick="setFilter('forest',this,'mobile')">FOREST</button>
+    <button class="mob-fbtn" onclick="setFilter('bridge',this,'mobile')">BRIDGE</button>
+  </div>
+  <div id="mob-list"></div>
+</div>
+
+<!-- MOBILE DETAIL FULLSCREEN -->
+<div id="mob-detail">
+  <button id="mob-detail-close" onclick="closeMobDetail()">← BACK TO MAP</button>
+  <div id="mob-detail-inner"></div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div id="mob-nav">
+  <button class="mob-nav-btn active" id="nav-map" onclick="mobNav('map')">
+    <span class="mob-nav-icon">🗺</span>MAP
+  </button>
+  <button class="mob-nav-btn" id="nav-list" onclick="mobNav('list')">
+    <span class="mob-nav-icon">📍</span>SPOTS
+  </button>
+  <button class="mob-nav-btn" id="nav-chat" onclick="mobNav('chat')">
+    <span class="mob-nav-icon">💬</span>CHAT
+  </button>
+  <button class="mob-nav-btn" id="nav-add" onclick="openModal()">
+    <span class="mob-nav-icon">＋</span>ADD
+  </button>
+</div>
+
+<!-- CHAT OVERLAY -->
+<div id="chat-overlay" onclick="closeChatOutside(event)">
+  <div id="chat-panel">
+    <div id="chat-head">
+      <div>
+        <div class="chat-title">Global Chat</div>
+        <div class="chat-subtitle">rekt campers worldwide · no auth required</div>
+      </div>
+      <button id="chat-close" onclick="toggleChat()">✕</button>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area">
+      <input id="chat-name-input" type="text" placeholder="ser / anon" maxlength="20">
+      <textarea id="chat-text-input" placeholder="gm frens..." maxlength="280" onkeydown="chatKeydown(event)"></textarea>
+      <button id="chat-send" onclick="sendChat()">SEND</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD SPOT -->
 <div id="modal-bg" onclick="closeBg(event)">
   <div id="modal">
     <div class="mhead">
@@ -464,7 +702,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng" type="number" placeholder="2.35" step="0.0001"></div>
         <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
       </div>
-      <div class="fhint" style="margin-bottom:12px">Google Maps → правый клик на точке → первая строка = координаты</div>
+      <div class="fhint" style="margin-bottom:12px">Google Maps → правый клик → первая строка = координаты</div>
       <button id="fsub" onclick="submitPlace()">APE IN — ADD SPOT</button>
     </div>
   </div>
@@ -493,6 +731,7 @@ const PLACES = [
   { id:15, name:"Princes Street Gardens",      city:"Edinburgh, Scotland",      type:"park",    desc:"Technically illegal but Scotland has seen worse. Castle backdrop. Cold is character building.", safety:3, votes:61,  tags:["cold","castle-view","wind"], gold:false, lat:55.951,  lng:-3.196  }
 ];
 
+// ── STATE ──
 let filter = 'all';
 let selId = null;
 let safety = 3;
@@ -500,6 +739,9 @@ let nextId = 100;
 let voted = new Set();
 let markers = {};
 let popupPlaceId = null;
+let drawerExpanded = false;
+let chatOpen = false;
+const isMobile = () => window.innerWidth <= 768;
 
 const tcol = t => ({ rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[t] || '#888');
 const safe_lbl = ['','extremely rekt','risky ser','degen approved','comfy homeless','ultra safe (tokyo tier)'];
@@ -514,8 +756,18 @@ const map = new mapboxgl.Map({
   projection: 'mercator'
 });
 map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-map.on('load', () => { buildMarkers(); renderList(); updateStats(); });
-map.on('click', () => { hidePopup(); desel(); });
+map.on('load', () => { buildMarkers(); renderList(); updateStats(); initChat(); });
+map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
+
+// ── XSS PROTECTION ──
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
 
 // ── POPUP ──
 const popupEl  = document.getElementById('popup');
@@ -524,13 +776,11 @@ const popupBox = document.getElementById('popup-box');
 function showPopup(p) {
   popupPlaceId = p.id;
   const col = tcol(p.type);
-
   document.getElementById('pb-type').textContent = p.type.toUpperCase();
   document.getElementById('pb-type').style.color = col;
   document.getElementById('pb-name').textContent = (p.gold ? '★ ' : '') + p.name;
   document.getElementById('pb-city').textContent = p.city;
   document.getElementById('pb-votes').textContent = p.votes;
-
   const dotsEl = document.getElementById('pb-sdots');
   dotsEl.innerHTML = '';
   for (let i = 0; i < 5; i++) {
@@ -539,26 +789,20 @@ function showPopup(p) {
     if (i < p.safety) d.style.background = col;
     dotsEl.appendChild(d);
   }
-
   document.getElementById('pb-btn').onclick = e => {
     e.stopPropagation();
     hidePopup();
-    sel(p.id, false);
+    if (isMobile()) openMobDetail(p);
+    else sel(p.id, false);
   };
-
   positionPopup(p);
   popupEl.classList.add('show');
 }
 
 function positionPopup(p) {
-  // project lngLat → pixel coords relative to the map canvas
   const pt = map.project([p.lng, p.lat]);
-  // position the outer div at that pixel point
-  // popup-box then uses transform: translate(-50%, calc(-100% - 18px)) to appear above
   popupEl.style.left = pt.x + 'px';
   popupEl.style.top  = pt.y + 'px';
-  popupBox.style.left = '0';
-  popupBox.style.top  = '0';
 }
 
 function hidePopup() {
@@ -566,75 +810,38 @@ function hidePopup() {
   popupEl.classList.remove('show');
 }
 
-// Reposition on map move/zoom so popup stays glued to point
-map.on('move',   updatePopupPos);
-map.on('zoom',   updatePopupPos);
-map.on('rotate', updatePopupPos);
-function updatePopupPos() {
-  if (popupPlaceId === null) return;
-  const p = PLACES.find(x => x.id === popupPlaceId);
-  if (p) positionPopup(p);
-}
-
-// Stop popup clicks bubbling to map
+map.on('move', () => { if (popupPlaceId !== null) { const p = PLACES.find(x => x.id === popupPlaceId); if (p) positionPopup(p); } });
 popupEl.addEventListener('click', e => e.stopPropagation());
 
 // ── MARKERS ──
 function buildMarkers() {
   Object.values(markers).forEach(m => m.marker.remove());
   markers = {};
-
   const arr = filter === 'all' ? PLACES : PLACES.filter(p => p.type === filter);
   arr.forEach(p => {
     const col = tcol(p.type);
     const size = p.gold ? 15 : 11;
-
     const el = document.createElement('div');
-    el.style.cssText = `
-      width:${size}px; height:${size}px;
-      border-radius:50%;
-      background:${col};
-      box-shadow: 0 0 0 3px ${col}44;
-      cursor:pointer;
-      will-change: box-shadow;
-    `;
-
-    // hover: only change box-shadow — never change position/transform
-    el.addEventListener('mouseenter', () => {
-      el.style.boxShadow = `0 0 0 7px ${col}55`;
-    });
-    el.addEventListener('mouseleave', () => {
-      el.style.boxShadow = selId === p.id
-        ? `0 0 0 8px ${col}66`
-        : `0 0 0 3px ${col}44`;
-    });
-
+    el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${col};box-shadow:0 0 0 3px ${col}44;cursor:pointer;will-change:box-shadow;`;
+    el.addEventListener('mouseenter', () => { el.style.boxShadow = `0 0 0 7px ${col}55`; });
+    el.addEventListener('mouseleave', () => { el.style.boxShadow = selId === p.id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`; });
     el.addEventListener('click', e => {
       e.stopPropagation();
-      if (popupPlaceId === p.id) {
-        hidePopup();
-      } else {
-        showPopup(p);
-      }
+      if (popupPlaceId === p.id) hidePopup();
+      else showPopup(p);
     });
-
-    const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-      .setLngLat([p.lng, p.lat])
-      .addTo(map);
-
+    const marker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([p.lng, p.lat]).addTo(map);
     markers[p.id] = { marker, el, col };
   });
 }
 
 function highlightMarker(id) {
   Object.entries(markers).forEach(([mid, { el, col }]) => {
-    el.style.boxShadow = parseInt(mid) === id
-      ? `0 0 0 8px ${col}66`
-      : `0 0 0 3px ${col}44`;
+    el.style.boxShadow = parseInt(mid) === id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`;
   });
 }
 
-// ── SELECT ──
+// ── SELECT (desktop) ──
 function sel(id, fly = true) {
   selId = id;
   const p = PLACES.find(x => x.id === id);
@@ -656,48 +863,69 @@ function desel() {
   renderList();
 }
 
-// ── DETAIL ──
+// ── MOBILE DETAIL ──
+function openMobDetail(p) {
+  const col = tcol(p.type);
+  const isVoted = voted.has(p.id);
+  const dots = (n, c) => Array(5).fill(0).map((_,i) =>
+    `<div style="width:8px;height:8px;border-radius:50%;background:${i<n?c:'#2a2a2a'}"></div>`
+  ).join('');
+
+  document.getElementById('mob-detail-inner').innerHTML = `
+    <div class="d-badge" style="color:${col}">${p.type.toUpperCase()}</div>
+    <div class="d-name">${p.gold ? '★ ' : ''}${esc(p.name)}</div>
+    <div class="d-city">${esc(p.city)}</div>
+    <div class="d-sec">
+      <div class="d-lbl">Field Report</div>
+      <div class="d-txt">${esc(p.desc)}</div>
+    </div>
+    <div class="d-sec">
+      <div class="d-lbl">Safety</div>
+      <div class="d-srow">
+        <div style="display:flex;gap:4px">${dots(p.safety, col)}</div>
+        <div class="d-slbl">${safe_lbl[p.safety]}</div>
+      </div>
+    </div>
+    <div class="d-sec">
+      <div class="d-lbl">Tags</div>
+      <div class="d-tags">${p.tags.map(t => `<div class="d-tag">#${esc(t)}</div>`).join('')}</div>
+    </div>
+    <div class="d-vote-row">
+      <button id="mob-vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
+      <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
+    </div>
+  `;
+  document.getElementById('mob-detail').classList.add('show');
+}
+
+function closeMobDetail() {
+  document.getElementById('mob-detail').classList.remove('show');
+}
+
+// ── DESKTOP DETAIL ──
 function renderDetail(p) {
   document.getElementById('right-empty').style.display = 'none';
   const d = document.getElementById('right-detail');
   d.classList.add('show');
   const col = tcol(p.type);
   const isVoted = voted.has(p.id);
-
-  const dots = (n, c, cls, big) => Array(5).fill(0).map((_,i) => {
-    const sz = big ? 8 : 6;
-    const bg = i < n ? c : '#2a2a2a';
-    return `<div class="${cls}" style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg}"></div>`;
-  }).join('');
+  const dots = (n, c) => Array(5).fill(0).map((_,i) =>
+    `<div style="width:8px;height:8px;border-radius:50%;background:${i<n?c:'#2a2a2a'}"></div>`
+  ).join('');
 
   d.innerHTML = `
     <button class="d-close" onclick="desel()">✕ CLOSE</button>
     <div class="d-badge" style="color:${col}">${p.type.toUpperCase()}</div>
-    <div class="d-name">${p.gold ? '★ ' : ''}${p.name}</div>
-    <div class="d-city">${p.city}</div>
-
-    <div class="d-sec">
-      <div class="d-lbl">Field Report</div>
-      <div class="d-txt">${p.desc}</div>
-    </div>
-
+    <div class="d-name">${p.gold ? '★ ' : ''}${esc(p.name)}</div>
+    <div class="d-city">${esc(p.city)}</div>
+    <div class="d-sec"><div class="d-lbl">Field Report</div><div class="d-txt">${esc(p.desc)}</div></div>
     <div class="d-sec">
       <div class="d-lbl">Safety</div>
-      <div class="d-srow">
-        <div style="display:flex;gap:4px">${dots(p.safety, col, '', true)}</div>
-        <div class="d-slbl">${safe_lbl[p.safety]}</div>
-      </div>
+      <div class="d-srow"><div style="display:flex;gap:4px">${dots(p.safety,col)}</div><div class="d-slbl">${safe_lbl[p.safety]}</div></div>
     </div>
-
-    <div class="d-sec">
-      <div class="d-lbl">Tags</div>
-      <div class="d-tags">${p.tags.map(t => `<div class="d-tag">#${t}</div>`).join('')}</div>
-    </div>
-
+    <div class="d-sec"><div class="d-lbl">Tags</div><div class="d-tags">${p.tags.map(t=>`<div class="d-tag">#${esc(t)}</div>`).join('')}</div></div>
     <div class="d-vote-row">
-      <button id="vote-btn" class="${isVoted ? 'voted' : ''}" onclick="doVote(${p.id})">
-        ${isVoted ? '✓ VOTED' : '▲ VOTE'}
-      </button>
+      <button id="vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
   `;
@@ -710,7 +938,8 @@ function doVote(id) {
   if (!p) return;
   p.votes++;
   voted.add(id);
-  renderDetail(p);
+  if (isMobile()) openMobDetail(p);
+  else renderDetail(p);
   renderList();
   updateStats();
   toast('▲ Voted! WAGMI fren 🛌');
@@ -720,42 +949,148 @@ function doVote(id) {
 function renderList() {
   const arr = filter === 'all' ? PLACES : PLACES.filter(p => p.type === filter);
   const sorted = [...arr].sort((a,b) => b.votes - a.votes);
+  const dots = n => Array(5).fill(0).map((_,i) => `<div class="sd${i<n?' on':''}"></div>`).join('');
+  const makeHtml = (mob) => sorted.map(p => `
+    <div class="card${p.id===selId?' active':''}" onclick="${mob?`mobSelPlace(${p.id})`:`sel(${p.id},true)`}">
+      <div class="card-row1"><div class="card-name">${p.gold?'★ ':''}${esc(p.name)}</div><div class="ctag t-${p.type}">${p.type}</div></div>
+      <div class="card-city">${esc(p.city)}</div>
+      <div class="card-row2"><div class="sdots">${dots(p.safety)}</div><div class="cvotes"><b>${p.votes}</b> votes</div></div>
+    </div>`).join('');
+  document.getElementById('list').innerHTML = makeHtml(false);
+  document.getElementById('mob-list').innerHTML = makeHtml(true);
+  document.querySelector('#list .card.active')?.scrollIntoView({ block: 'nearest' });
+}
 
-  document.getElementById('list').innerHTML = sorted.map(p => {
-    const dots = Array(5).fill(0).map((_,i) =>
-      `<div class="sd${i < p.safety ? ' on' : ''}"></div>`
-    ).join('');
-    return `
-      <div class="card${p.id === selId ? ' active' : ''}" onclick="sel(${p.id}, true)">
-        <div class="card-row1">
-          <div class="card-name">${p.gold ? '★ ' : ''}${p.name}</div>
-          <div class="ctag t-${p.type}">${p.type}</div>
-        </div>
-        <div class="card-city">${p.city}</div>
-        <div class="card-row2">
-          <div class="sdots">${dots}</div>
-          <div class="cvotes"><b>${p.votes}</b> votes</div>
-        </div>
-      </div>`;
-  }).join('');
-
-  document.querySelector('.card.active')?.scrollIntoView({ block: 'nearest' });
+function mobSelPlace(id) {
+  const p = PLACES.find(x => x.id === id);
+  if (!p) return;
+  map.flyTo({ center: [p.lng, p.lat], zoom: 12, duration: 800, essential: true });
+  collapseDrawer();
+  setTimeout(() => openMobDetail(p), 200);
 }
 
 function updateStats() {
+  const total = PLACES.reduce((a,b) => a+b.votes, 0).toLocaleString();
   document.getElementById('stat-spots').textContent = PLACES.length;
-  document.getElementById('stat-campers').textContent = PLACES.reduce((a,b) => a + b.votes, 0).toLocaleString();
+  document.getElementById('stat-campers').textContent = total;
+  document.getElementById('mob-stat-spots').textContent = PLACES.length;
 }
 
 // ── FILTER ──
-function setFilter(type, btn) {
+function setFilter(type, btn, ctx) {
   filter = type;
-  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  if (ctx === 'desktop') {
+    document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  } else {
+    document.querySelectorAll('.mob-fbtn').forEach(b => b.classList.remove('on'));
+  }
   btn.classList.add('on');
   hidePopup();
   if (selId) desel();
   buildMarkers();
   renderList();
+}
+
+// ── MOBILE DRAWER ──
+function toggleDrawer() {
+  drawerExpanded = !drawerExpanded;
+  document.getElementById('mob-drawer').classList.toggle('expanded', drawerExpanded);
+}
+function collapseDrawer() {
+  drawerExpanded = false;
+  document.getElementById('mob-drawer').classList.remove('expanded');
+}
+
+// ── MOBILE NAV ──
+function mobNav(tab) {
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + tab).classList.add('active');
+  closeMobDetail();
+  if (tab === 'map') {
+    collapseDrawer();
+  } else if (tab === 'list') {
+    document.getElementById('mob-drawer').classList.add('expanded');
+    drawerExpanded = true;
+  } else if (tab === 'chat') {
+    toggleChat();
+    document.getElementById('nav-map').classList.add('active');
+    document.getElementById('nav-chat').classList.remove('active');
+  }
+}
+
+// ── CHAT ──
+const SEED_MESSAGES = [
+  { name: 'rektoor.eth', text: 'gm frens. currently at barceloneta. 10/10 would rug again', time: '23:41' },
+  { name: 'anon_degen', text: 'ser how is the wifi signal at odaiba', time: '23:44' },
+  { name: 'lumphini_larry', text: 'bangkok park 5 stars no cap. cost of living beats my portfolio returns', time: '23:51' },
+  { name: 'system', text: '— global chat · no auth required · be a degen —', time: '' },
+];
+
+function initChat() {
+  const container = document.getElementById('chat-messages');
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem('sbf_chat') || '[]'); } catch(e) {}
+  const msgs = saved.length ? saved : SEED_MESSAGES;
+  msgs.forEach(m => container.appendChild(buildMsgEl(m)));
+  container.scrollTop = container.scrollHeight;
+}
+
+function buildMsgEl({ name, text, time }) {
+  const el = document.createElement('div');
+  if (name === 'system') {
+    el.className = 'chat-msg system';
+    el.innerHTML = `<div class="chat-msg-text">${esc(text)}</div>`;
+  } else {
+    el.className = 'chat-msg';
+    el.innerHTML = `
+      <div class="chat-msg-meta">
+        <span class="chat-msg-name">${esc(name)}</span>
+        <span class="chat-msg-time">${esc(time)}</span>
+      </div>
+      <div class="chat-msg-text">${esc(text)}</div>
+    `;
+  }
+  return el;
+}
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-overlay').classList.toggle('open', chatOpen);
+  document.getElementById('chat-btn').classList.toggle('active', chatOpen);
+  if (chatOpen) {
+    const container = document.getElementById('chat-messages');
+    container.scrollTop = container.scrollHeight;
+    setTimeout(() => document.getElementById('chat-text-input').focus(), 100);
+  }
+}
+
+function closeChatOutside(e) {
+  if (e.target === document.getElementById('chat-overlay')) toggleChat();
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function sendChat() {
+  const nameEl = document.getElementById('chat-name-input');
+  const textEl = document.getElementById('chat-text-input');
+  const text = textEl.value.trim();
+  if (!text) return;
+  const name = nameEl.value.trim() || 'anon';
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  const msg = { name, text, time };
+  const container = document.getElementById('chat-messages');
+  container.appendChild(buildMsgEl(msg));
+  container.scrollTop = container.scrollHeight;
+  textEl.value = '';
+  try {
+    let saved = JSON.parse(localStorage.getItem('sbf_chat') || '[]');
+    saved.push(msg);
+    if (saved.length > 100) saved = saved.slice(-100);
+    localStorage.setItem('sbf_chat', JSON.stringify(saved));
+  } catch(e) {}
 }
 
 // ── MODAL ──
@@ -764,7 +1099,7 @@ function closeModal() { document.getElementById('modal-bg').classList.remove('op
 function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
 function setSafety(n) {
   safety = n;
-  document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('on', i+1 === n));
+  document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('on', i+1===n));
 }
 
 function submitPlace() {
@@ -775,29 +1110,28 @@ function submitPlace() {
   const tagsRaw = document.getElementById('f-tags').value.trim();
   const lat = parseFloat(document.getElementById('f-lat').value);
   const lng = parseFloat(document.getElementById('f-lng').value);
-
   if (!name || !city || !desc) { toast('ser — fill name, city and description'); return; }
   if (isNaN(lat) || isNaN(lng)) { toast('ser — add coordinates'); return; }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
-
-  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean) : ['degen'];
+  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean) : ['degen'];
   const p = { id: nextId++, name, city, type, desc, safety, votes: 1, tags, gold: false, lat, lng };
   PLACES.push(p);
-
   closeModal();
   toast('📍 Spot added! NGMI but at least you have a place to sleep.');
-  buildMarkers();
-  renderList();
-  updateStats();
-  sel(p.id, true);
-
-  ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => { document.getElementById(id).value = ''; });
+  buildMarkers(); renderList(); updateStats();
+  if (isMobile()) {
+    map.flyTo({ center: [p.lng, p.lat], zoom: 12, duration: 800, essential: true });
+    setTimeout(() => openMobDetail(p), 300);
+  } else {
+    sel(p.id, true);
+  }
+  ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => { document.getElementById(id).value=''; });
   document.getElementById('f-type').value = 'rooftop';
   setSafety(3);
 }
 
 // ── TOAST ──
-function toast(msg, dur = 3000) {
+function toast(msg, dur=3000) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
