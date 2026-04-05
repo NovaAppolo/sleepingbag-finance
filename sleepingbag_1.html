@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SleepingBag.finance — Rekt Campers Atlas</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --panel: #0f0f0f;
+    --gold: #c8a96e;
+    --gold-dim: rgba(200,169,110,0.12);
+    --green: #4a9e6a;
+    --red: #e84040;
+    --text: #e8e0d0;
+    --text-dim: #666;
+    --border: #1e1e1e;
+    --border2: #2a2a2a;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Space Mono', monospace; overflow: hidden; }
+
+  /* HEADER */
+  #header {
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    gap: 24px;
+    position: relative;
+    z-index: 10;
+  }
+  #logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: var(--gold); letter-spacing: -0.5px; white-space: nowrap; }
+  #logo span { color: var(--text-dim); font-weight: 400; }
+  .stat { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .stat b { color: var(--text); font-weight: 700; }
+  .blink { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  #add-btn {
+    margin-left: auto;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  #add-btn:hover { opacity: 0.85; }
+
+  /* LAYOUT */
+  #app { display: flex; height: calc(100vh - 52px); }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: 272px;
+    min-width: 272px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 2;
+  }
+  #sidebar-title { padding: 12px 14px 10px; border-bottom: 1px solid var(--border); font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; }
+  #filter-row { display: flex; gap: 5px; padding: 9px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .filter-btn { font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; padding: 3px 7px; background: none; border: 1px solid var(--border2); color: var(--text-dim); cursor: pointer; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.15s; }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--gold); color: var(--gold); }
+  #list { overflow-y: auto; flex: 1; }
+  #list::-webkit-scrollbar { width: 3px; }
+  #list::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .card { padding: 11px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .card:hover { background: #141414; }
+  .card.active { background: var(--gold-dim); border-left: 2px solid var(--gold); padding-left: 12px; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 3px; }
+  .card-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; color: var(--text); line-height: 1.3; }
+  .card-type { font-size: 8px; font-weight: 700; padding: 2px 5px; border: 1px solid; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.5px; text-transform: uppercase; }
+  .type-rooftop { color: var(--gold); border-color: var(--gold); }
+  .type-beach, .type-park, .type-forest { color: var(--green); border-color: var(--green); }
+  .type-bridge { color: var(--red); border-color: var(--red); }
+  .type-other { color: var(--text-dim); border-color: var(--text-dim); }
+  .card-city { font-size: 10px; color: var(--text-dim); margin-bottom: 5px; }
+  .card-bottom { display: flex; align-items: center; gap: 8px; }
+  .dots { display: flex; gap: 3px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border2); }
+  .dot.on { background: var(--green); }
+  .votes { font-size: 10px; color: var(--text-dim); margin-left: auto; }
+  .votes b { color: var(--gold); }
+
+  /* MAP */
+  #map { flex: 1; }
+
+  /* Mapbox popup custom style */
+  .mapboxgl-popup-content {
+    background: var(--panel) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 0 !important;
+    padding: 12px 14px !important;
+    font-family: 'Space Mono', monospace !important;
+    color: var(--text) !important;
+    box-shadow: none !important;
+    min-width: 180px;
+  }
+  .mapboxgl-popup-tip { display: none !important; }
+  .mapboxgl-popup-close-button { color: var(--text-dim) !important; font-size: 14px !important; right: 6px !important; top: 4px !important; background: none !important; }
+  .popup-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 3px; color: var(--text); }
+  .popup-city { font-size: 10px; color: var(--text-dim); margin-bottom: 8px; }
+  .popup-open { background: var(--gold); color: #000; border: none; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 10px; padding: 6px 12px; cursor: pointer; width: 100%; letter-spacing: 0.5px; }
+  .popup-open:hover { opacity: 0.85; }
+
+  /* DETAIL */
+  #detail {
+    width: 292px;
+    min-width: 292px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 2;
+  }
+  #detail::-webkit-scrollbar { width: 3px; }
+  #detail::-webkit-scrollbar-thumb { background: var(--border2); }
+  #detail.open { display: flex; }
+  #detail-inner { padding: 16px; flex: 1; }
+  #detail-close { background: none; border: 1px solid var(--border2); color: var(--text-dim); font-family: 'Space Mono', monospace; font-size: 10px; padding: 4px 8px; cursor: pointer; margin-bottom: 14px; display: inline-block; }
+  #detail-close:hover { color: var(--text); border-color: var(--text-dim); }
+  .d-type { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .d-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; line-height: 1.2; margin-bottom: 3px; }
+  .d-city { font-size: 10px; color: var(--text-dim); margin-bottom: 14px; }
+  .d-section { border-top: 1px solid var(--border); padding: 11px 0; }
+  .d-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
+  .d-text { font-size: 11px; line-height: 1.65; color: var(--text); }
+  .d-safety-row { display: flex; align-items: center; gap: 8px; }
+  .d-dots { display: flex; gap: 4px; }
+  .d-dots .dot { width: 7px; height: 7px; }
+  .d-safety-lbl { font-size: 10px; color: var(--text-dim); }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border: 1px solid var(--border2); color: var(--text-dim); }
+  .d-vote { padding: 13px 0 0; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  #vote-btn { background: none; border: 1px solid var(--gold); color: var(--gold); font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; padding: 7px 14px; cursor: pointer; transition: all 0.15s; }
+  #vote-btn:hover { background: var(--gold-dim); }
+  #vote-btn.voted { background: var(--gold); color: #000; }
+  #vote-count { font-size: 13px; font-weight: 700; }
+  #vote-count span { font-size: 10px; color: var(--text-dim); font-weight: 400; }
+
+  /* EMPTY PANEL */
+  #detail-empty {
+    width: 292px;
+    min-width: 292px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  #detail-empty .ico { font-size: 36px; margin-bottom: 14px; }
+
+  /* MODAL */
+  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 100; align-items: center; justify-content: center; }
+  #modal-overlay.open { display: flex; }
+  #modal { background: var(--panel); border: 1px solid var(--border2); width: 450px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  #modal::-webkit-scrollbar { width: 3px; }
+  #modal::-webkit-scrollbar-thumb { background: var(--border2); }
+  .modal-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; color: var(--gold); }
+  .modal-x { background: none; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; line-height: 1; padding: 0 2px; }
+  .modal-x:hover { color: var(--text); }
+  .modal-body { padding: 16px; }
+  .fg { margin-bottom: 12px; }
+  .fl { display: block; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; }
+  .fi, .fs, .ft { width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; padding: 8px 10px; outline: none; transition: border-color 0.15s; }
+  .fi:focus, .fs:focus, .ft:focus { border-color: var(--gold); }
+  .ft { resize: vertical; min-height: 70px; }
+  .fs option { background: var(--panel); }
+  .frow { display: flex; gap: 10px; }
+  .frow .fg { flex: 1; }
+  .safety-opts { display: flex; gap: 6px; }
+  .sopt { flex: 1; padding: 7px 0; text-align: center; border: 1px solid var(--border2); font-size: 9px; cursor: pointer; color: var(--text-dim); transition: all 0.15s; font-family: 'Space Mono', monospace; }
+  .sopt:hover { border-color: var(--green); color: var(--green); }
+  .sopt.sel { border-color: var(--green); color: var(--green); background: rgba(74,158,106,0.1); }
+  .fhint { font-size: 9px; color: var(--text-dim); margin-top: 4px; line-height: 1.5; }
+  #form-submit { width: 100%; background: var(--gold); color: #000; border: none; padding: 11px; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 11px; cursor: pointer; letter-spacing: 1px; margin-top: 4px; transition: opacity 0.15s; }
+  #form-submit:hover { opacity: 0.85; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--gold); color: var(--text); padding: 10px 16px; font-size: 11px; z-index: 200; transform: translateY(60px); opacity: 0; transition: all 0.22s; pointer-events: none; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Mapbox UI overrides */
+  .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right { display: none; }
+  .mapboxgl-ctrl-top-right { top: 10px; right: 10px; }
+  .mapboxgl-ctrl-group { background: var(--panel) !important; border: 1px solid var(--border2) !important; border-radius: 0 !important; }
+  .mapboxgl-ctrl-group button { border-radius: 0 !important; }
+  .mapboxgl-ctrl button .mapboxgl-ctrl-icon { filter: invert(0.7); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="logo">SleepingBag<span>.finance</span></div>
+  <div class="stat"><span class="blink"></span> <b id="stat-spots">0</b> spots</div>
+  <div class="stat"><b id="stat-votes">0</b> rekt campers</div>
+  <div class="stat">market mood: <b style="color:var(--red)">REKT</b></div>
+  <button id="add-btn" onclick="openModal()">+ ADD SPOT</button>
+</div>
+
+<div id="app">
+
+  <div id="sidebar">
+    <div id="sidebar-title">Rekt Atlas</div>
+    <div id="filter-row">
+      <button class="filter-btn active" onclick="setFilter('all',this)">ALL</button>
+      <button class="filter-btn" onclick="setFilter('rooftop',this)">ROOF</button>
+      <button class="filter-btn" onclick="setFilter('beach',this)">BEACH</button>
+      <button class="filter-btn" onclick="setFilter('park',this)">PARK</button>
+      <button class="filter-btn" onclick="setFilter('forest',this)">FOREST</button>
+      <button class="filter-btn" onclick="setFilter('bridge',this)">BRIDGE</button>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="detail-empty">
+    <div class="ico">🛌</div>
+    <div>Click a spot on the map<br>or in the list.</div>
+    <br>
+    <div style="color:var(--gold)">ser, your portfolio is -90%.</div>
+    <div>Time to find a place to sleep.</div>
+  </div>
+
+  <div id="detail">
+    <div id="detail-inner"></div>
+  </div>
+
+</div>
+
+<div id="modal-overlay" onclick="closeModalOutside(event)">
+  <div id="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add Sleeping Spot</div>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="fl">Spot Name</label><input class="fi" id="f-name" placeholder="Barceloneta North Sector"></div>
+        <div class="fg"><label class="fl">City</label><input class="fi" id="f-city" placeholder="Barcelona"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Type</label>
+        <select class="fs" id="f-type">
+          <option value="rooftop">Rooftop</option>
+          <option value="beach">Beach</option>
+          <option value="park">Park</option>
+          <option value="forest">Forest</option>
+          <option value="bridge">Bridge</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Description</label>
+        <textarea class="ft" id="f-desc" placeholder="Soft sand, warm nights. 4G to watch your portfolio bleed all night."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Safety Level</label>
+        <div class="safety-opts">
+          <div class="sopt" onclick="setSafety(1)">1<br><span style="font-size:8px">REKT</span></div>
+          <div class="sopt" onclick="setSafety(2)">2<br><span style="font-size:8px">RISKY</span></div>
+          <div class="sopt sel" onclick="setSafety(3)">3<br><span style="font-size:8px">DEGEN</span></div>
+          <div class="sopt" onclick="setSafety(4)">4<br><span style="font-size:8px">COMFY</span></div>
+          <div class="sopt" onclick="setSafety(5)">5<br><span style="font-size:8px">SAFE</span></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Tags (comma-separated)</label>
+        <input class="fi" id="f-tags" placeholder="wifi, no-police, scenic, rain-proof">
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng" type="number" placeholder="2.35" step="0.0001"></div>
+        <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
+      </div>
+      <div class="fhint" style="margin-bottom:10px">Google Maps → правый клик на точке → первая строка = координаты</div>
+      <button id="form-submit" onclick="submitPlace()">APE IN — ADD SPOT</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1Ijoia29kYWtnb2xkIiwiYSI6ImNtbmx3b2RzYTFkenkyb3NtYmlhcWZxeTQifQ.qJktiWrZBfMNJME-uHNh2w';
+
+const places = [
+  { id:1,  name:"Barceloneta North End",      city:"Barcelona, Spain",       type:"beach",   desc:"Soft sand, warm nights May–Oct. 4G to watch your portfolio bleed all night. Mossos patrol at 3am but they've seen worse degens than you, fren.", safety:4, votes:312, tags:["wifi","4g","warm","scenic","police-occasional"], gold:true,  lat:41.385,  lng:2.196   },
+  { id:2,  name:"Pompidou Rooftop Adjacent",  city:"Paris, France",           type:"rooftop", desc:"Pigeons will judge you. Panoramic view of the city you can no longer afford. Wind is brutal after midnight. Bring two sleeping bags, ser.", safety:2, votes:89,  tags:["scenic","windy","pigeons","security-risk"], gold:false, lat:48.861,  lng:2.352   },
+  { id:3,  name:"Odaiba Seaside Park",         city:"Tokyo, Japan",            type:"park",    desc:"Ultra safe. Vending machines 50m away. Sleeping in parks is basically cultural here. No one will bother you. Tokyo tier comfort.", safety:5, votes:541, tags:["vending-machines","ultra-safe","wifi","tokyo-tier"], gold:true,  lat:35.626,  lng:139.774 },
+  { id:4,  name:"Lumphini Park East Gate",     city:"Bangkok, Thailand",       type:"park",    desc:"Portfolio -90% but cost of living -95%. Crocodiles in the lake — cheaper than your leveraged longs. Mosquito net required.", safety:3, votes:203, tags:["cheap","mosquitos","crocodiles","warm","4g"], gold:false, lat:13.728,  lng:100.541 },
+  { id:5,  name:"Signal Hill Slope",           city:"Cape Town, South Africa", type:"park",    desc:"10/10 would lose savings again. Ocean view at dawn. Zero light pollution for staring at your red PnL.", safety:2, votes:67,  tags:["scenic","windy","remote","risky-at-night"], gold:true,  lat:-33.918, lng:18.408  },
+  { id:6,  name:"Copacabana Wall",             city:"Rio de Janeiro, Brazil",  type:"beach",   desc:"Warm year-round. Locals will invite you to play footvolley. Don't mention crypto — they lost their LUNA bags too.", safety:2, votes:44,  tags:["warm","social","risky","no-rain"], gold:false, lat:-22.971, lng:-43.183 },
+  { id:7,  name:"Vondelpark Central",          city:"Amsterdam, Netherlands",  type:"park",    desc:"Technically legal before 1am. Brings its own philosophical irony when you sold ETH at $80. Ducks will steal your snacks.", safety:4, votes:178, tags:["legal","ducks","wifi","mild-weather"], gold:false, lat:52.358,  lng:4.869   },
+  { id:8,  name:"Under BKK Expressway",        city:"Bangkok, Thailand",       type:"bridge",  desc:"Zero stars. Absolute degen territory. But dry when monsoon hits. Motorway noise drowns out your internal monologue about the rug pull.", safety:1, votes:22,  tags:["dry","loud","extreme-degen","risky"], gold:false, lat:13.744,  lng:100.501 },
+  { id:9,  name:"Central Park Ramble",         city:"New York, USA",           type:"park",    desc:"Historic tradition of sleeping here. Bloomberg tried to stop it, didn't work. Good 5G for monitoring your Coinbase balance crash.", safety:3, votes:156, tags:["5g","historic","police-occasional","urban"], gold:false, lat:40.779,  lng:-73.966 },
+  { id:10, name:"Bondi Beach Cliff Path",      city:"Sydney, Australia",       type:"beach",   desc:"Surf culture means nobody judges alternative living. Sunrise at 5am will make you forget you're down 97%. Bring a windbreaker, ser.", safety:4, votes:231, tags:["scenic","surfers","sunrise","wind"], gold:true,  lat:-33.890, lng:151.274 },
+  { id:11, name:"Santa Monica Pier Underpass", city:"Los Angeles, USA",        type:"bridge",  desc:"Degen HQ of the West Coast. Half the people here made and lost millions in DeFi. United in vibes.", safety:2, votes:88,  tags:["community","degen-hq","police","ocean-breeze"], gold:false, lat:34.010,  lng:-118.497},
+  { id:12, name:"Shinjuku Gyoen Corner",       city:"Tokyo, Japan",            type:"park",    desc:"Closes at dusk officially but the east fence has seen things. Cherry blossoms in April make portfolio -80% feel almost poetic.", safety:4, votes:302, tags:["tokyo-tier","seasonal","fence","scenic"], gold:false, lat:35.685,  lng:139.710 },
+  { id:13, name:"Bali Rice Terrace Edge",      city:"Ubud, Indonesia",         type:"forest",  desc:"Digital nomad gone final form. $8/day total budget. Locals think you are spiritual. You are. Nothing humbles like losing $200k on a shitcoin.", safety:4, votes:189, tags:["spiritual","cheap","rice-fields","wifi-nearby"], gold:true,  lat:-8.519,  lng:115.262 },
+  { id:14, name:"Trocadero Gardens Wall",      city:"Paris, France",           type:"park",    desc:"Eiffel Tower hourly light show as your personal emotional support. Still costs €0. Unlike your hedge fund that cost €200k.", safety:3, votes:94,  tags:["scenic","eiffel","tourists","wind"], gold:false, lat:48.862,  lng:2.289   },
+  { id:15, name:"Princes Street Gardens",      city:"Edinburgh, Scotland",     type:"park",    desc:"Technically illegal but Scotland has seen worse. Castle backdrop. Cold is character building.", safety:3, votes:61,  tags:["cold","castle-view","wind"], gold:false, lat:55.951,  lng:-3.196  }
+];
+
+let currentFilter = 'all';
+let selectedId = null;
+let selectedSafety = 3;
+let nextId = 100;
+let votedIds = new Set();
+let markers = {};
+
+function typeColor(type) {
+  return { rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[type] || '#888';
+}
+
+// ── MAP ──
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: [20, 25],
+  zoom: 1.8,
+  minZoom: 1,
+  projection: 'mercator'
+});
+
+map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+
+map.on('load', () => {
+  renderMarkers();
+  renderList();
+  updateStats();
+});
+
+map.on('click', () => { desel(); });
+
+// ── MARKERS ──
+function makeMarkerEl(p) {
+  const col = typeColor(p.type);
+  const size = p.gold ? 14 : 11;
+  const el = document.createElement('div');
+  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${col};box-shadow:0 0 0 3px ${col}44;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;`;
+  el.addEventListener('mouseenter', () => { el.style.transform='scale(1.5)'; el.style.boxShadow=`0 0 0 5px ${col}66`; });
+  el.addEventListener('mouseleave', () => { if(selectedId!==p.id){el.style.transform='scale(1)';el.style.boxShadow=`0 0 0 3px ${col}44`;} });
+  return el;
+}
+
+function renderMarkers() {
+  Object.values(markers).forEach(m => m.marker.remove());
+  markers = {};
+
+  const arr = currentFilter === 'all' ? places : places.filter(p => p.type === currentFilter);
+  arr.forEach(p => {
+    const el = makeMarkerEl(p);
+    const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+      .setLngLat([p.lng, p.lat])
+      .addTo(map);
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sel(p.id, true);
+    });
+
+    markers[p.id] = { marker, el };
+  });
+}
+
+function highlightMarker(id) {
+  Object.entries(markers).forEach(([mid, { el }]) => {
+    const p = places.find(x => x.id === parseInt(mid));
+    if (!p) return;
+    const col = typeColor(p.type);
+    if (parseInt(mid) === id) {
+      el.style.transform = 'scale(1.8)';
+      el.style.boxShadow = `0 0 0 7px ${col}66`;
+    } else {
+      el.style.transform = 'scale(1)';
+      el.style.boxShadow = `0 0 0 3px ${col}44`;
+    }
+  });
+}
+
+// ── SELECT / DESELECT ──
+function sel(id, fly) {
+  selectedId = id;
+  const p = places.find(x => x.id === id);
+  if (!p) return;
+
+  if (fly) {
+    map.flyTo({ center: [p.lng, p.lat], zoom: Math.max(map.getZoom(), 10), duration: 800, essential: true });
+  }
+
+  highlightMarker(id);
+  renderDetail(p);
+  renderList();
+}
+
+function desel() {
+  if (!selectedId) return;
+  selectedId = null;
+  highlightMarker(null);
+  document.getElementById('detail').classList.remove('open');
+  document.getElementById('detail-empty').style.display = 'flex';
+  renderList();
+}
+
+// ── DETAIL PANEL ──
+function renderDetail(p) {
+  document.getElementById('detail-empty').style.display = 'none';
+  document.getElementById('detail').classList.add('open');
+
+  const col = typeColor(p.type);
+  const safeLabels = ['','extremely rekt','risky ser','degen approved','comfy homeless','ultra safe (tokyo tier)'];
+  const voted = votedIds.has(p.id);
+  const dot5 = (n, c) => Array(5).fill(0).map((_,i)=>`<div class="dot ${i<n?'on':''}" style="${i<n?`background:${c}`:''}"></div>`).join('');
+
+  document.getElementById('detail-inner').innerHTML = `
+    <button id="detail-close" onclick="desel()">✕ CLOSE</button>
+    <div class="d-type" style="color:${col}">${p.type.toUpperCase()}</div>
+    <div class="d-name">${p.gold ? '★ ' : ''}${p.name}</div>
+    <div class="d-city">${p.city}</div>
+    <div class="d-section">
+      <div class="d-label">Field Report</div>
+      <div class="d-text">${p.desc}</div>
+    </div>
+    <div class="d-section">
+      <div class="d-label">Safety</div>
+      <div class="d-safety-row">
+        <div class="d-dots">${dot5(p.safety, col)}</div>
+        <div class="d-safety-lbl">${safeLabels[p.safety]}</div>
+      </div>
+    </div>
+    <div class="d-section">
+      <div class="d-label">Tags</div>
+      <div class="tags">${p.tags.map(t=>`<div class="tag">#${t}</div>`).join('')}</div>
+    </div>
+    <div class="d-vote">
+      <button id="vote-btn" class="${voted?'voted':''}" onclick="vote(${p.id})">${voted?'✓ VOTED':'▲ VOTE'}</button>
+      <div id="vote-count">${p.votes} <span>degens survived here</span></div>
+    </div>
+  `;
+}
+
+// ── VOTE ──
+function vote(id) {
+  if (votedIds.has(id)) { toast('ser you already voted'); return; }
+  const p = places.find(x => x.id === id);
+  if (!p) return;
+  p.votes++;
+  votedIds.add(id);
+  renderDetail(p);
+  renderList();
+  updateStats();
+  toast('▲ Voted! WAGMI fren 🛌');
+}
+
+// ── LIST ──
+function renderList() {
+  const arr = currentFilter === 'all' ? places : places.filter(p => p.type === currentFilter);
+  const sorted = [...arr].sort((a,b) => b.votes - a.votes);
+  const dot5 = n => Array(5).fill(0).map((_,i)=>`<div class="dot ${i<n?'on':''}"></div>`).join('');
+
+  document.getElementById('list').innerHTML = sorted.map(p => `
+    <div class="card ${p.id===selectedId?'active':''}" onclick="sel(${p.id}, true)">
+      <div class="card-top">
+        <div class="card-name">${p.gold?'★ ':''}${p.name}</div>
+        <div class="card-type type-${p.type}">${p.type}</div>
+      </div>
+      <div class="card-city">${p.city}</div>
+      <div class="card-bottom">
+        <div class="dots">${dot5(p.safety)}</div>
+        <div class="votes"><b>${p.votes}</b> votes</div>
+      </div>
+    </div>
+  `).join('');
+
+  const active = document.querySelector('.card.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+function updateStats() {
+  document.getElementById('stat-spots').textContent = places.length;
+  document.getElementById('stat-votes').textContent = places.reduce((a,b)=>a+b.votes,0).toLocaleString();
+}
+
+// ── FILTER ──
+function setFilter(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (selectedId) desel();
+  renderMarkers();
+  renderList();
+}
+
+// ── MODAL ──
+function openModal() { document.getElementById('modal-overlay').classList.add('open'); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOutside(e) { if (e.target===document.getElementById('modal-overlay')) closeModal(); }
+
+function setSafety(n) {
+  selectedSafety = n;
+  document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('sel', i+1===n));
+}
+
+function submitPlace() {
+  const name = document.getElementById('f-name').value.trim();
+  const city = document.getElementById('f-city').value.trim();
+  const type = document.getElementById('f-type').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  const tagsRaw = document.getElementById('f-tags').value.trim();
+  const lat = parseFloat(document.getElementById('f-lat').value);
+  const lng = parseFloat(document.getElementById('f-lng').value);
+
+  if (!name || !city || !desc) { toast('ser — fill name, city and description'); return; }
+  if (isNaN(lat) || isNaN(lng)) { toast('ser — add coordinates (lat/lng)'); return; }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates ser'); return; }
+
+  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean) : ['degen'];
+  const p = { id: nextId++, name, city, type, desc, safety: selectedSafety, votes: 1, tags, gold: false, lat, lng };
+
+  places.push(p);
+  closeModal();
+  toast('📍 Spot added! NGMI but at least you have a place to sleep.');
+  renderMarkers();
+  renderList();
+  updateStats();
+  sel(p.id, true);
+
+  ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-type').value = 'rooftop';
+  setSafety(3);
+}
+
+// ── TOAST ──
+function toast(msg, dur=3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+</script>
+</body>
+</html>
