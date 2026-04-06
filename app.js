@@ -15,18 +15,26 @@ let walletReady = false; // true only when connected + Base network
 
 function updateWalletBtn() {
   const btn = document.getElementById('wallet-btn');
+  // если есть auth session через wallet
+  if (currentUser && currentUser.user_metadata?.address) {
+    const addr = currentUser.user_metadata.address;
+    btn.textContent = addr.slice(0,6) + '\u2026' + addr.slice(-4);
+    btn.className = 'connected';
+    btn.id = 'wallet-btn';
+    return;
+  }
   if (!walletAddress) {
     btn.textContent = '🔗 CONNECT';
     btn.className = '';
     btn.id = 'wallet-btn';
     return;
   }
-  const short = walletAddress.slice(0,6) + '…' + walletAddress.slice(-4);
+  const short = walletAddress.slice(0,6) + '\u2026' + walletAddress.slice(-4);
   if (walletReady) {
     btn.textContent = short;
     btn.className = 'connected';
   } else {
-    btn.textContent = '⚠ ' + short;
+    btn.textContent = '\u26a0 ' + short;
     btn.className = 'wrong-network';
   }
   btn.id = 'wallet-btn';
@@ -56,7 +64,10 @@ async function offerSwitch() {
 }
 
 async function connectWallet() {
-  if (walletAddress) { disconnectWallet(); return; }
+  // если уже auth через wallet — disconnect полностью
+  if (currentUser && walletAddress) { await disconnectWallet(); return; }
+  // если просто connected без auth — идём в auth
+  if (walletAddress) { await signInWithWallet(); return; }
   if (!window.ethereum) { toast('ser install MetaMask first'); return; }
   try {
     walletProvider = new ethers.BrowserProvider(window.ethereum);
@@ -64,30 +75,38 @@ async function connectWallet() {
     walletAddress = accounts[0];
     await checkNetwork();
     updateWalletBtn();
-    if (walletReady) toast('wallet connected on Base 🔗');
+    // сразу идём в auth
+    await signInWithWallet();
   } catch (e) {
     if (e.code === 4001) toast('ser you rejected the connection');
     else toast('connection failed');
   }
 }
 
-function disconnectWallet() {
+async function disconnectWallet() {
+  await sb.auth.signOut();
+  currentUser = null;
   walletAddress = null;
   walletProvider = null;
   walletReady = false;
   updateWalletBtn();
-  toast('wallet disconnected');
+  updateAuthUI();
+  toast('disconnected');
 }
 
-// auto-reconnect wallet (не трогает auth session)
+// auto-sync wallet state из Supabase session при загрузке
+// wallet vars синхронизируем только если auth session уже есть
 window.addEventListener('load', async () => {
   if (!window.ethereum) return;
   const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-  if (accounts.length) {
+  if (!accounts.length) return;
+  // не устанавливаем walletAddress без auth — initAuth подхватит session
+  // только checkNetwork нужен для Base-only логики если сессия уже есть
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user?.user_metadata?.address) {
     walletProvider = new ethers.BrowserProvider(window.ethereum);
     walletAddress = accounts[0];
     await checkNetwork();
-    updateWalletBtn();
   }
 });
 
@@ -137,6 +156,7 @@ async function initAuth() {
   sb.auth.onAuthStateChange((_event, session) => {
     currentUser = session?.user ?? null;
     updateAuthUI();
+    updateWalletBtn();
     if (currentUser) closeAuthModal();
   });
 }
@@ -165,39 +185,23 @@ function updateAuthUI() {
 }
 
 async function signInWithWallet() {
-  if (!window.ethereum) {
-    toast('ser install MetaMask first');
-    return;
-  }
+  if (!window.ethereum) { toast('ser install MetaMask first'); return; }
+  const btn = document.getElementById('auth-wallet-btn');
   try {
-    const authModalWalletBtn = document.getElementById('auth-wallet-btn');
-    if (authModalWalletBtn) authModalWalletBtn.textContent = 'signing...';
-
-    const { data, error } = await sb.auth.signInWithWeb3({
+    if (btn) btn.textContent = 'signing...';
+    const { error } = await sb.auth.signInWithWeb3({
       chain: 'ethereum',
       statement: 'Sign in to SleepingBag.finance — the rekt campers atlas.'
     });
-
     if (error) {
       toast('wallet sign-in failed: ' + error.message);
-      if (authModalWalletBtn) authModalWalletBtn.textContent = '🦊 Continue with Wallet';
+      if (btn) btn.textContent = '🦊 Continue with Wallet';
       return;
     }
-
-    // после успешного auth — обновляем wallet state тоже
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length) {
-        walletProvider = new ethers.BrowserProvider(window.ethereum);
-        walletAddress = accounts[0];
-        await checkNetwork();
-        updateWalletBtn();
-      }
-    }
-    toast('gm ser 🛌 wallet connected');
+    // onAuthStateChange подхватит session → updateAuthUI + closeAuthModal
+    toast('gm ser 🛌');
   } catch (e) {
     toast('wallet sign-in error');
-    const btn = document.getElementById('auth-wallet-btn');
     if (btn) btn.textContent = '🦊 Continue with Wallet';
   }
 }
@@ -237,7 +241,11 @@ async function signInWithEmail() {
 async function signOut() {
   await sb.auth.signOut();
   currentUser = null;
+  walletAddress = null;
+  walletProvider = null;
+  walletReady = false;
   updateAuthUI();
+  updateWalletBtn();
   toast('signed out ser');
 }
 
@@ -262,7 +270,7 @@ function authModalBodyHTML() {
   const hasEthereum = typeof window.ethereum !== 'undefined';
   return `
     ${hasEthereum ? `
-    <button class="auth-wallet-btn" id="auth-wallet-btn" onclick="signInWithWallet()">
+    <button class="auth-wallet-btn" id="auth-wallet-btn" onclick="connectWallet()">
       🦊 Continue with Wallet
     </button>
     <div class="auth-or"><span>or</span></div>
