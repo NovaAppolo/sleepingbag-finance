@@ -1,0 +1,583 @@
+// ── WALLET (Base-only) ──
+const BASE_CHAIN_ID = 8453;
+const BASE_CHAIN_ID_HEX = '0x2105';
+const BASE_CHAIN_CONFIG = {
+  chainId: BASE_CHAIN_ID_HEX,
+  chainName: 'Base',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: ['https://mainnet.base.org'],
+  blockExplorerUrls: ['https://basescan.org']
+};
+
+let walletAddress = null;
+let walletProvider = null;
+let walletReady = false; // true only when connected + Base network
+
+function updateWalletBtn() {
+  const btn = document.getElementById('wallet-btn');
+  if (!walletAddress) {
+    btn.textContent = '🔗 CONNECT';
+    btn.className = '';
+    btn.id = 'wallet-btn';
+    return;
+  }
+  const short = walletAddress.slice(0,6) + '…' + walletAddress.slice(-4);
+  if (walletReady) {
+    btn.textContent = short;
+    btn.className = 'connected';
+  } else {
+    btn.textContent = '⚠ ' + short;
+    btn.className = 'wrong-network';
+  }
+  btn.id = 'wallet-btn';
+}
+
+async function checkNetwork() {
+  if (!window.ethereum || !walletAddress) { walletReady = false; return; }
+  const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+  walletReady = parseInt(chainId, 16) === BASE_CHAIN_ID;
+  updateWalletBtn();
+  if (!walletReady) offerSwitch();
+}
+
+async function offerSwitch() {
+  toast('wrong network ser — switching to Base...');
+  try {
+    await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: BASE_CHAIN_ID_HEX }] });
+  } catch (e) {
+    if (e.code === 4902) {
+      try {
+        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [BASE_CHAIN_CONFIG] });
+      } catch { toast('could not add Base network'); }
+    } else if (e.code === 4001) {
+      toast('ser you need Base network to use wallet features');
+    }
+  }
+}
+
+async function connectWallet() {
+  const btn = document.getElementById('wallet-btn');
+  if (walletAddress) { disconnectWallet(); return; }
+  if (!window.ethereum) { toast('ser install MetaMask first'); return; }
+  try {
+    walletProvider = new ethers.BrowserProvider(window.ethereum);
+    const accounts = await walletProvider.send('eth_requestAccounts', []);
+    walletAddress = accounts[0];
+    await checkNetwork();
+    updateWalletBtn();
+    if (walletReady) toast('wallet connected on Base 🔗');
+  } catch (e) {
+    if (e.code === 4001) toast('ser you rejected the connection');
+    else toast('connection failed');
+  }
+}
+
+function disconnectWallet() {
+  walletAddress = null;
+  walletProvider = null;
+  walletReady = false;
+  updateWalletBtn();
+  toast('wallet disconnected');
+}
+
+// auto-reconnect
+window.addEventListener('load', async () => {
+  if (!window.ethereum) return;
+  const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+  if (accounts.length) {
+    walletProvider = new ethers.BrowserProvider(window.ethereum);
+    walletAddress = accounts[0];
+    await checkNetwork();
+    updateWalletBtn();
+  }
+});
+
+// handle account/chain changes
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', accs => {
+    if (!accs.length) { disconnectWallet(); return; }
+    walletAddress = accs[0];
+    checkNetwork();
+  });
+  window.ethereum.on('chainChanged', () => {
+    checkNetwork();
+  });
+}
+
+// helper: check wallet is ready before crypto actions
+function requireWallet() {
+  if (!walletAddress) { toast('connect wallet first ser'); return false; }
+  if (!walletReady) { offerSwitch(); return false; }
+  return true;
+}
+
+// ── SUPABASE + MAP INIT ──
+mapboxgl.accessToken = 'pk.eyJ1Ijoia29kYWtnb2xkIiwiYSI6ImNtbm1jcnp4NDFlcW4yc3MxdGNpbjd0amUifQ.dsA_k9-ASZ-2OAmgmt7Pew';
+
+const sb = supabase.createClient(
+  'https://fhfrocvcbmkoidlvbury.supabase.co',
+  'sb_publishable_vT2HG-9np9RLJlLJ_gcUjw__aqiiUwo'
+);
+
+// anon_id — постоянный ID устройства
+function getAnonId() {
+  let id = localStorage.getItem('sbf_anon_id');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('sbf_anon_id', id); }
+  return id;
+}
+const ANON_ID = getAnonId();
+
+const PLACES = [
+  { id:1,  name:"Barceloneta North End",      city:"Barcelona, Spain",        type:"beach",   desc:"Soft sand, warm nights May–Oct. 4G to watch your portfolio bleed all night. Mossos patrol at 3am but they've seen worse degens than you, fren.", safety:4, votes:312, tags:["wifi","4g","warm","scenic","police-occasional"], gold:true,  lat:41.385,  lng:2.196   },
+  { id:2,  name:"Pompidou Rooftop Adjacent",  city:"Paris, France",            type:"rooftop", desc:"Pigeons will judge you. Panoramic view of the city you can no longer afford. Wind is brutal after midnight. Bring two sleeping bags, ser.", safety:2, votes:89,  tags:["scenic","windy","pigeons","security-risk"], gold:false, lat:48.861,  lng:2.352   },
+  { id:3,  name:"Odaiba Seaside Park",         city:"Tokyo, Japan",             type:"park",    desc:"Ultra safe. Vending machines 50m away. Sleeping in parks is basically cultural here. No one will bother you. Tokyo tier comfort.", safety:5, votes:541, tags:["vending-machines","ultra-safe","wifi","tokyo-tier"], gold:true,  lat:35.626,  lng:139.774 },
+  { id:4,  name:"Lumphini Park East Gate",     city:"Bangkok, Thailand",        type:"park",    desc:"Portfolio -90% but cost of living -95%. Crocodiles in the lake — cheaper than your leveraged longs. Mosquito net required.", safety:3, votes:203, tags:["cheap","mosquitos","crocodiles","warm","4g"], gold:false, lat:13.728,  lng:100.541 },
+  { id:5,  name:"Signal Hill Slope",           city:"Cape Town, South Africa",  type:"park",    desc:"10/10 would lose savings again. Ocean view at dawn. Zero light pollution for staring at your red PnL.", safety:2, votes:67,  tags:["scenic","windy","remote","risky-at-night"], gold:true,  lat:-33.918, lng:18.408  },
+  { id:6,  name:"Copacabana Wall",             city:"Rio de Janeiro, Brazil",   type:"beach",   desc:"Warm year-round. Locals will invite you to play footvolley. Don't mention crypto — they lost their LUNA bags too.", safety:2, votes:44,  tags:["warm","social","risky","no-rain"], gold:false, lat:-22.971, lng:-43.183 },
+  { id:7,  name:"Vondelpark Central",          city:"Amsterdam, Netherlands",   type:"park",    desc:"Technically legal before 1am. Brings its own philosophical irony when you sold ETH at $80. Ducks will steal your snacks.", safety:4, votes:178, tags:["legal","ducks","wifi","mild-weather"], gold:false, lat:52.358,  lng:4.869   },
+  { id:8,  name:"Under BKK Expressway",        city:"Bangkok, Thailand",        type:"bridge",  desc:"Zero stars. Absolute degen territory. But dry when monsoon hits. Motorway noise drowns out your internal monologue about the rug pull.", safety:1, votes:22,  tags:["dry","loud","extreme-degen","risky"], gold:false, lat:13.744,  lng:100.501 },
+  { id:9,  name:"Central Park Ramble",         city:"New York, USA",            type:"park",    desc:"Historic tradition of sleeping here. Bloomberg tried to stop it, didn't work. Good 5G for monitoring your Coinbase balance crash.", safety:3, votes:156, tags:["5g","historic","police-occasional","urban"], gold:false, lat:40.779,  lng:-73.966 },
+  { id:10, name:"Bondi Beach Cliff Path",      city:"Sydney, Australia",        type:"beach",   desc:"Surf culture means nobody judges alternative living. Sunrise at 5am will make you forget you're down 97%. Bring a windbreaker, ser.", safety:4, votes:231, tags:["scenic","surfers","sunrise","wind"], gold:true,  lat:-33.890, lng:151.274 },
+  { id:11, name:"Santa Monica Pier Underpass", city:"Los Angeles, USA",         type:"bridge",  desc:"Degen HQ of the West Coast. Half the people here made and lost millions in DeFi. United in vibes.", safety:2, votes:88,  tags:["community","degen-hq","police","ocean-breeze"], gold:false, lat:34.010,  lng:-118.497},
+  { id:12, name:"Shinjuku Gyoen Corner",       city:"Tokyo, Japan",             type:"park",    desc:"Closes at dusk officially but the east fence has seen things. Cherry blossoms in April make portfolio -80% feel almost poetic.", safety:4, votes:302, tags:["tokyo-tier","seasonal","fence","scenic"], gold:false, lat:35.685,  lng:139.710 },
+  { id:13, name:"Bali Rice Terrace Edge",      city:"Ubud, Indonesia",          type:"forest",  desc:"Digital nomad gone final form. $8/day total budget. Locals think you are spiritual. You are. Nothing humbles like losing $200k on a shitcoin.", safety:4, votes:189, tags:["spiritual","cheap","rice-fields","wifi-nearby"], gold:true,  lat:-8.519,  lng:115.262 },
+  { id:14, name:"Trocadero Gardens Wall",      city:"Paris, France",            type:"park",    desc:"Eiffel Tower hourly light show as your personal emotional support. Still costs €0. Unlike your hedge fund that cost €200k.", safety:3, votes:94,  tags:["scenic","eiffel","tourists","wind"], gold:false, lat:48.862,  lng:2.289   },
+  { id:15, name:"Princes Street Gardens",      city:"Edinburgh, Scotland",      type:"park",    desc:"Technically illegal but Scotland has seen worse. Castle backdrop. Cold is character building.", safety:3, votes:61,  tags:["cold","castle-view","wind"], gold:false, lat:55.951,  lng:-3.196  }
+];
+
+// ── STATE ──
+let filter = 'all';
+let selId = null;
+let safety = 3;
+let nextId = 100;
+let voted = new Set();
+let markers = {};
+let popupPlaceId = null;
+let drawerExpanded = false;
+let chatOpen = false;
+const isMobile = () => window.innerWidth <= 768;
+
+const tcol = t => ({ rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[t] || '#888');
+const safe_lbl = ['','extremely rekt','risky ser','degen approved','comfy homeless','ultra safe (tokyo tier)'];
+
+// ── MAP ──
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/dark-v11',
+  center: [20, 25],
+  zoom: 1.8,
+  minZoom: 1,
+  projection: 'mercator'
+});
+map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+map.on('load', async () => {
+  // загружаем места из Supabase
+  const { data, error } = await sb.from('places').select('*').order('votes_count', { ascending: false });
+  if (data && !error) {
+    PLACES.length = 0;
+    data.forEach(p => PLACES.push({
+      id: p.id, name: p.name, city: p.city, type: p.type,
+      desc: p.description, safety: p.safety, votes: p.votes_count,
+      tags: p.tags || [], gold: p.gold, lat: p.lat, lng: p.lng
+    }));
+  }
+  buildMarkers(); renderList(); updateStats(); initChat();
+});
+map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
+
+// ── XSS PROTECTION ──
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ── POPUP ──
+const popupEl  = document.getElementById('popup');
+const popupBox = document.getElementById('popup-box');
+
+function showPopup(p) {
+  popupPlaceId = p.id;
+  const col = tcol(p.type);
+  document.getElementById('pb-type').textContent = p.type.toUpperCase();
+  document.getElementById('pb-type').style.color = col;
+  document.getElementById('pb-name').textContent = (p.gold ? '★ ' : '') + p.name;
+  document.getElementById('pb-city').textContent = p.city;
+  document.getElementById('pb-votes').textContent = p.votes;
+  const dotsEl = document.getElementById('pb-sdots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const d = document.createElement('div');
+    d.className = 'pb-sd' + (i < p.safety ? ' on' : '');
+    if (i < p.safety) d.style.background = col;
+    dotsEl.appendChild(d);
+  }
+  document.getElementById('pb-btn').onclick = e => {
+    e.stopPropagation();
+    hidePopup();
+    if (isMobile()) openMobDetail(p);
+    else sel(p.id, false);
+  };
+  positionPopup(p);
+  popupEl.classList.add('show');
+}
+
+function positionPopup(p) {
+  const pt = map.project([p.lng, p.lat]);
+  popupEl.style.left = pt.x + 'px';
+  popupEl.style.top  = pt.y + 'px';
+}
+
+function hidePopup() {
+  popupPlaceId = null;
+  popupEl.classList.remove('show');
+}
+
+map.on('move', () => { if (popupPlaceId !== null) { const p = PLACES.find(x => x.id === popupPlaceId); if (p) positionPopup(p); } });
+popupEl.addEventListener('click', e => e.stopPropagation());
+
+// ── MARKERS ──
+function buildMarkers() {
+  Object.values(markers).forEach(m => m.marker.remove());
+  markers = {};
+  const arr = filter === 'all' ? PLACES : PLACES.filter(p => p.type === filter);
+  arr.forEach(p => {
+    const col = tcol(p.type);
+    const size = p.gold ? 15 : 11;
+    const el = document.createElement('div');
+    el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${col};box-shadow:0 0 0 3px ${col}44;cursor:pointer;will-change:box-shadow;`;
+    el.addEventListener('mouseenter', () => { el.style.boxShadow = `0 0 0 7px ${col}55`; });
+    el.addEventListener('mouseleave', () => { el.style.boxShadow = selId === p.id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`; });
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      if (popupPlaceId === p.id) hidePopup();
+      else showPopup(p);
+    });
+    const marker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([p.lng, p.lat]).addTo(map);
+    markers[p.id] = { marker, el, col };
+  });
+}
+
+function highlightMarker(id) {
+  Object.entries(markers).forEach(([mid, { el, col }]) => {
+    el.style.boxShadow = parseInt(mid) === id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`;
+  });
+}
+
+// ── SELECT (desktop) ──
+function sel(id, fly = true) {
+  selId = id;
+  const p = PLACES.find(x => x.id === id);
+  if (!p) return;
+  if (fly) map.flyTo({ center: [p.lng, p.lat], zoom: Math.max(map.getZoom(), 10), duration: 800, essential: true });
+  highlightMarker(id);
+  renderDetail(p);
+  renderList();
+}
+
+function desel() {
+  if (!selId) return;
+  selId = null;
+  highlightMarker(null);
+  document.getElementById('right-empty').style.display = 'flex';
+  const d = document.getElementById('right-detail');
+  d.classList.remove('show');
+  d.innerHTML = '';
+  renderList();
+}
+
+// ── MOBILE DETAIL ──
+function openMobDetail(p) {
+  const col = tcol(p.type);
+  const isVoted = voted.has(p.id);
+  const dots = (n, c) => Array(5).fill(0).map((_,i) =>
+    `<div style="width:8px;height:8px;border-radius:50%;background:${i<n?c:'#2a2a2a'}"></div>`
+  ).join('');
+
+  document.getElementById('mob-detail-inner').innerHTML = `
+    <div class="d-badge" style="color:${col}">${p.type.toUpperCase()}</div>
+    <div class="d-name">${p.gold ? '★ ' : ''}${esc(p.name)}</div>
+    <div class="d-city">${esc(p.city)}</div>
+    <div class="d-sec">
+      <div class="d-lbl">Field Report</div>
+      <div class="d-txt">${esc(p.desc)}</div>
+    </div>
+    <div class="d-sec">
+      <div class="d-lbl">Safety</div>
+      <div class="d-srow">
+        <div style="display:flex;gap:4px">${dots(p.safety, col)}</div>
+        <div class="d-slbl">${safe_lbl[p.safety]}</div>
+      </div>
+    </div>
+    <div class="d-sec">
+      <div class="d-lbl">Tags</div>
+      <div class="d-tags">${p.tags.map(t => `<div class="d-tag">#${esc(t)}</div>`).join('')}</div>
+    </div>
+    <div class="d-vote-row">
+      <button id="mob-vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
+      <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
+    </div>
+  `;
+  document.getElementById('mob-detail').classList.add('show');
+}
+
+function closeMobDetail() {
+  document.getElementById('mob-detail').classList.remove('show');
+}
+
+// ── DESKTOP DETAIL ──
+function renderDetail(p) {
+  document.getElementById('right-empty').style.display = 'none';
+  const d = document.getElementById('right-detail');
+  d.classList.add('show');
+  const col = tcol(p.type);
+  const isVoted = voted.has(p.id);
+  const dots = (n, c) => Array(5).fill(0).map((_,i) =>
+    `<div style="width:8px;height:8px;border-radius:50%;background:${i<n?c:'#2a2a2a'}"></div>`
+  ).join('');
+
+  d.innerHTML = `
+    <button class="d-close" onclick="desel()">✕ CLOSE</button>
+    <div class="d-badge" style="color:${col}">${p.type.toUpperCase()}</div>
+    <div class="d-name">${p.gold ? '★ ' : ''}${esc(p.name)}</div>
+    <div class="d-city">${esc(p.city)}</div>
+    <div class="d-sec"><div class="d-lbl">Field Report</div><div class="d-txt">${esc(p.desc)}</div></div>
+    <div class="d-sec">
+      <div class="d-lbl">Safety</div>
+      <div class="d-srow"><div style="display:flex;gap:4px">${dots(p.safety,col)}</div><div class="d-slbl">${safe_lbl[p.safety]}</div></div>
+    </div>
+    <div class="d-sec"><div class="d-lbl">Tags</div><div class="d-tags">${p.tags.map(t=>`<div class="d-tag">#${esc(t)}</div>`).join('')}</div></div>
+    <div class="d-vote-row">
+      <button id="vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
+      <div id="vote-count">${p.votes} <span>degens survived here</span></div>
+    </div>
+  `;
+}
+
+async function doVote(id) {
+  if (voted.has(id)) { toast('ser you already voted'); return; }
+  const { error } = await sb.from('place_votes').insert({ place_id: id, anon_id: ANON_ID });
+  if (error) { toast(error.code === '23505' ? 'ser you already voted' : 'error voting'); return; }
+  const p = PLACES.find(x => x.id === id);
+  if (!p) return;
+  p.votes++;
+  voted.add(id);
+  if (isMobile()) openMobDetail(p);
+  else renderDetail(p);
+  renderList();
+  updateStats();
+  toast('▲ Voted! WAGMI fren 🛌');
+}
+
+// ── LIST ──
+function renderList() {
+  const arr = filter === 'all' ? PLACES : PLACES.filter(p => p.type === filter);
+  const sorted = [...arr].sort((a,b) => b.votes - a.votes);
+  const dots = n => Array(5).fill(0).map((_,i) => `<div class="sd${i<n?' on':''}"></div>`).join('');
+  const makeHtml = (mob) => sorted.map(p => `
+    <div class="card${p.id===selId?' active':''}" onclick="${mob?`mobSelPlace(${p.id})`:`sel(${p.id},true)`}">
+      <div class="card-row1"><div class="card-name">${p.gold?'★ ':''}${esc(p.name)}</div><div class="ctag t-${p.type}">${p.type}</div></div>
+      <div class="card-city">${esc(p.city)}</div>
+      <div class="card-row2"><div class="sdots">${dots(p.safety)}</div><div class="cvotes"><b>${p.votes}</b> votes</div></div>
+    </div>`).join('');
+  document.getElementById('list').innerHTML = makeHtml(false);
+  document.getElementById('mob-list').innerHTML = makeHtml(true);
+  document.querySelector('#list .card.active')?.scrollIntoView({ block: 'nearest' });
+}
+
+function mobSelPlace(id) {
+  const p = PLACES.find(x => x.id === id);
+  if (!p) return;
+  map.flyTo({ center: [p.lng, p.lat], zoom: 12, duration: 800, essential: true });
+  collapseDrawer();
+  setTimeout(() => openMobDetail(p), 200);
+}
+
+function updateStats() {
+  const total = PLACES.reduce((a,b) => a+b.votes, 0).toLocaleString();
+  document.getElementById('stat-spots').textContent = PLACES.length;
+  document.getElementById('stat-campers').textContent = total;
+  document.getElementById('mob-stat-spots').textContent = PLACES.length;
+}
+
+// ── FILTER ──
+function setFilter(type, btn, ctx) {
+  filter = type;
+  if (ctx === 'desktop') {
+    document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  } else {
+    document.querySelectorAll('.mob-fbtn').forEach(b => b.classList.remove('on'));
+  }
+  btn.classList.add('on');
+  hidePopup();
+  if (selId) desel();
+  buildMarkers();
+  renderList();
+}
+
+// ── MOBILE DRAWER ──
+function toggleDrawer() {
+  drawerExpanded = !drawerExpanded;
+  document.getElementById('mob-drawer').classList.toggle('expanded', drawerExpanded);
+}
+function collapseDrawer() {
+  drawerExpanded = false;
+  document.getElementById('mob-drawer').classList.remove('expanded');
+}
+
+// ── MOBILE NAV ──
+function mobNav(tab) {
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + tab).classList.add('active');
+  closeMobDetail();
+  if (tab === 'map') {
+    collapseDrawer();
+  } else if (tab === 'list') {
+    document.getElementById('mob-drawer').classList.add('expanded');
+    drawerExpanded = true;
+  } else if (tab === 'chat') {
+    toggleChat();
+    document.getElementById('nav-map').classList.add('active');
+    document.getElementById('nav-chat').classList.remove('active');
+  }
+}
+
+// ── CHAT ──
+const SEED_MESSAGES = [
+  { name: 'rektoor.eth', text: 'gm frens. currently at barceloneta. 10/10 would rug again', time: '23:41' },
+  { name: 'anon_degen', text: 'ser how is the wifi signal at odaiba', time: '23:44' },
+  { name: 'lumphini_larry', text: 'bangkok park 5 stars no cap. cost of living beats my portfolio returns', time: '23:51' },
+  { name: 'system', text: '— global chat · no auth required · be a degen —', time: '' },
+];
+
+async function initChat() {
+  const container = document.getElementById('chat-messages');
+  // загружаем последние 50 сообщений
+  const { data: raw } = await sb.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(50);
+  const data = raw ? raw.reverse() : null;
+  const msgs = (data && data.length) ? data : SEED_MESSAGES;
+  msgs.forEach(m => container.appendChild(buildMsgEl({
+    name: m.author_name || m.name,
+    text: m.text,
+    time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}) : m.time
+  })));
+  container.scrollTop = container.scrollHeight;
+  // realtime подписка
+  sb.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
+    const m = payload.new;
+    // не дублируем своё сообщение
+    if (m.anon_id === ANON_ID) return;
+    container.appendChild(buildMsgEl({
+      name: m.author_name,
+      text: m.text,
+      time: new Date(m.created_at).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'})
+    }));
+    container.scrollTop = container.scrollHeight;
+  }).subscribe();
+}
+
+function buildMsgEl({ name, text, time }) {
+  const el = document.createElement('div');
+  if (name === 'system') {
+    el.className = 'chat-msg system';
+    el.innerHTML = `<div class="chat-msg-text">${esc(text)}</div>`;
+  } else {
+    el.className = 'chat-msg';
+    el.innerHTML = `
+      <div class="chat-msg-meta">
+        <span class="chat-msg-name">${esc(name)}</span>
+        <span class="chat-msg-time">${esc(time)}</span>
+      </div>
+      <div class="chat-msg-text">${esc(text)}</div>
+    `;
+  }
+  return el;
+}
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-overlay').classList.toggle('open', chatOpen);
+  document.getElementById('chat-btn').classList.toggle('active', chatOpen);
+  if (chatOpen) {
+    const container = document.getElementById('chat-messages');
+    container.scrollTop = container.scrollHeight;
+    setTimeout(() => document.getElementById('chat-text-input').focus(), 100);
+  }
+}
+
+function closeChatOutside(e) {
+  if (e.target === document.getElementById('chat-overlay')) toggleChat();
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const nameEl = document.getElementById('chat-name-input');
+  const textEl = document.getElementById('chat-text-input');
+  const text = textEl.value.trim();
+  if (!text) return;
+  const name = nameEl.value.trim() || 'anon';
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  textEl.value = '';
+  const container = document.getElementById('chat-messages');
+  const msgEl = buildMsgEl({ name, text, time });
+  container.appendChild(msgEl);
+  container.scrollTop = container.scrollHeight;
+  const { error } = await sb.from('chat_messages').insert({ text, author_name: name, anon_id: ANON_ID });
+  if (error) { msgEl.remove(); toast('message not saved — check connection'); }
+}
+
+// ── MODAL ──
+function openModal() { document.getElementById('modal-bg').classList.add('open'); }
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
+function setSafety(n) {
+  safety = n;
+  document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('on', i+1===n));
+}
+
+async function submitPlace() {
+  const name = document.getElementById('f-name').value.trim();
+  const city = document.getElementById('f-city').value.trim();
+  const type = document.getElementById('f-type').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  const tagsRaw = document.getElementById('f-tags').value.trim();
+  const lat = parseFloat(document.getElementById('f-lat').value);
+  const lng = parseFloat(document.getElementById('f-lng').value);
+  if (!name || !city || !desc) { toast('ser — fill name, city and description'); return; }
+  if (isNaN(lat) || isNaN(lng)) { toast('ser — add coordinates'); return; }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
+  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean) : ['degen'];
+  const { data, error } = await sb.from('places').insert({
+    name, city, type, description: desc, safety, lat, lng, tags, gold: false, is_hidden: false, votes_count: 0
+  }).select().single();
+  if (error) { toast('error saving spot'); return; }
+  const p = { id: data.id, name, city, type, desc, safety, votes: 0, tags, gold: false, lat, lng };
+  PLACES.push(p);
+  closeModal();
+  toast('📍 Spot added! NGMI but at least you have a place to sleep.');
+  buildMarkers(); renderList(); updateStats();
+  if (isMobile()) {
+    map.flyTo({ center: [p.lng, p.lat], zoom: 12, duration: 800, essential: true });
+    setTimeout(() => openMobDetail(p), 300);
+  } else {
+    sel(p.id, true);
+  }
+  ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => { document.getElementById(id).value=''; });
+  document.getElementById('f-type').value = 'rooftop';
+  setSafety(3);
+}
+
+// ── TOAST ──
+function toast(msg, dur=3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}

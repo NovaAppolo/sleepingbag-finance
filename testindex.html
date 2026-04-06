@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SleepingBag.finance — Rekt Campers Atlas</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div id="logo">SleepingBag<span>.finance</span></div>
+
+  <div class="h-divider"></div>
+  <div class="h-live">
+    <div class="h-blink"></div>
+    <div class="h-stat">
+      <div class="h-stat-label">Spots</div>
+      <div class="h-stat-value gold" id="stat-spots">0</div>
+    </div>
+  </div>
+
+  <div class="h-divider"></div>
+  <div class="h-stat">
+    <div class="h-stat-label">Rekt campers</div>
+    <div class="h-stat-value" id="stat-campers">0</div>
+  </div>
+
+  <div class="h-divider"></div>
+  <div class="h-stat">
+    <div class="h-stat-label">Market mood</div>
+    <div class="h-stat-value red">REKT</div>
+  </div>
+
+  <div class="h-right">
+    <button id="chat-btn" onclick="toggleChat()">💬 CHAT</button>
+    <button id="wallet-btn" onclick="connectWallet()">🔗 CONNECT</button>
+    <button id="add-btn" onclick="openModal()">+ ADD SPOT</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- DESKTOP SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-top">Rekt Atlas</div>
+    <div id="filter-row">
+      <button class="fbtn on" onclick="setFilter('all',this,'desktop')">ALL</button>
+      <button class="fbtn" onclick="setFilter('rooftop',this,'desktop')">ROOF</button>
+      <button class="fbtn" onclick="setFilter('beach',this,'desktop')">BEACH</button>
+      <button class="fbtn" onclick="setFilter('park',this,'desktop')">PARK</button>
+      <button class="fbtn" onclick="setFilter('forest',this,'desktop')">FOREST</button>
+      <button class="fbtn" onclick="setFilter('bridge',this,'desktop')">BRIDGE</button>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="popup">
+      <div class="popup-box" id="popup-box">
+        <div class="pb-head">
+          <div class="pb-type" id="pb-type"></div>
+          <div class="pb-name" id="pb-name"></div>
+          <div class="pb-city" id="pb-city"></div>
+        </div>
+        <div class="pb-meta">
+          <div class="pb-sdots" id="pb-sdots"></div>
+          <div class="pb-votes"><b id="pb-votes">0</b> votes</div>
+        </div>
+        <button class="pb-btn" id="pb-btn">VIEW DETAILS →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESKTOP RIGHT PANEL -->
+  <div id="right">
+    <div id="right-empty">
+      <div class="ico">🛌</div>
+      <div>Click a spot on the map<br>or in the list.</div>
+      <br>
+      <div style="color:var(--gold);font-size:11px">ser, your portfolio is -90%.</div>
+      <div style="font-size:11px">Time to find a place to sleep.</div>
+    </div>
+    <div id="right-detail"></div>
+  </div>
+
+</div>
+
+<!-- MOBILE DRAWER (bottom sheet with list) -->
+<div id="mob-drawer">
+  <div id="mob-handle-area" onclick="toggleDrawer()">
+    <div id="mob-handle"></div>
+    <div id="mob-drawer-title">Rekt Atlas</div>
+    <div id="mob-spot-count"><b id="mob-stat-spots">0</b> spots</div>
+  </div>
+  <div id="mob-filter-row">
+    <button class="mob-fbtn on" onclick="setFilter('all',this,'mobile')">ALL</button>
+    <button class="mob-fbtn" onclick="setFilter('rooftop',this,'mobile')">ROOF</button>
+    <button class="mob-fbtn" onclick="setFilter('beach',this,'mobile')">BEACH</button>
+    <button class="mob-fbtn" onclick="setFilter('park',this,'mobile')">PARK</button>
+    <button class="mob-fbtn" onclick="setFilter('forest',this,'mobile')">FOREST</button>
+    <button class="mob-fbtn" onclick="setFilter('bridge',this,'mobile')">BRIDGE</button>
+  </div>
+  <div id="mob-list"></div>
+</div>
+
+<!-- MOBILE DETAIL FULLSCREEN -->
+<div id="mob-detail">
+  <button id="mob-detail-close" onclick="closeMobDetail()">← BACK TO MAP</button>
+  <div id="mob-detail-inner"></div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div id="mob-nav">
+  <button class="mob-nav-btn active" id="nav-map" onclick="mobNav('map')">
+    <span class="mob-nav-icon">🗺</span>MAP
+  </button>
+  <button class="mob-nav-btn" id="nav-list" onclick="mobNav('list')">
+    <span class="mob-nav-icon">📍</span>SPOTS
+  </button>
+  <button class="mob-nav-btn" id="nav-chat" onclick="mobNav('chat')">
+    <span class="mob-nav-icon">💬</span>CHAT
+  </button>
+  <button class="mob-nav-btn" id="nav-add" onclick="openModal()">
+    <span class="mob-nav-icon">＋</span>ADD
+  </button>
+</div>
+
+<!-- CHAT OVERLAY -->
+<div id="chat-overlay" onclick="closeChatOutside(event)">
+  <div id="chat-panel">
+    <div id="chat-head">
+      <div>
+        <div class="chat-title">Global Chat</div>
+        <div class="chat-subtitle">rekt campers worldwide · no auth required</div>
+      </div>
+      <button id="chat-close" onclick="toggleChat()">✕</button>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area">
+      <input id="chat-name-input" type="text" placeholder="ser / anon" maxlength="20">
+      <textarea id="chat-text-input" placeholder="gm frens..." maxlength="280" onkeydown="chatKeydown(event)"></textarea>
+      <button id="chat-send" onclick="sendChat()">SEND</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD SPOT -->
+<div id="modal-bg" onclick="closeBg(event)">
+  <div id="modal">
+    <div class="mhead">
+      <div class="mtitle">Add Sleeping Spot</div>
+      <button class="mx" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="frow">
+        <div class="fg"><label class="fl">Spot Name</label><input class="fi" id="f-name" placeholder="Barceloneta North Sector"></div>
+        <div class="fg"><label class="fl">City</label><input class="fi" id="f-city" placeholder="Barcelona"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Type</label>
+        <select class="fs" id="f-type">
+          <option value="rooftop">Rooftop</option>
+          <option value="beach">Beach</option>
+          <option value="park">Park</option>
+          <option value="forest">Forest</option>
+          <option value="bridge">Bridge</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Description</label>
+        <textarea class="ft" id="f-desc" placeholder="Soft sand, warm nights. 4G to watch your portfolio bleed all night."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Safety Level</label>
+        <div class="sopts">
+          <div class="sopt" onclick="setSafety(1)">1<br><span style="font-size:8px">REKT</span></div>
+          <div class="sopt" onclick="setSafety(2)">2<br><span style="font-size:8px">RISKY</span></div>
+          <div class="sopt on" onclick="setSafety(3)">3<br><span style="font-size:8px">DEGEN</span></div>
+          <div class="sopt" onclick="setSafety(4)">4<br><span style="font-size:8px">COMFY</span></div>
+          <div class="sopt" onclick="setSafety(5)">5<br><span style="font-size:8px">SAFE</span></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Tags (comma-separated)</label>
+        <input class="fi" id="f-tags" placeholder="wifi, no-police, scenic, rain-proof">
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng" type="number" placeholder="2.35" step="0.0001"></div>
+        <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
+      </div>
+      <div class="fhint" style="margin-bottom:12px">Google Maps → правый клик → первая строка = координаты</div>
+      <button id="fsub" onclick="submitPlace()">APE IN — ADD SPOT</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
