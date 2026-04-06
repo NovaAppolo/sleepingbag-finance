@@ -808,3 +808,61 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* chat cooldown */
 #chat-send:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── COMMENTS ── */
+.d-comments-sec { padding-bottom: 8px; }
+.d-comments-count { color: var(--text-dim); font-weight: 400; font-size: 9px; margin-left: 4px; }
+
+.comments-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.comments-loading, .comments-empty { font-size: 11px; color: var(--text-dim); padding: 4px 0; }
+
+.comment-item { border-left: 2px solid var(--border2); padding-left: 10px; }
+.comment-meta { display: flex; gap: 8px; align-items: baseline; margin-bottom: 3px; }
+.comment-author { font-size: 10px; font-weight: 700; color: var(--gold); }
+.comment-time { font-size: 9px; color: var(--text-dim); }
+.comment-text { font-size: 11px; color: var(--text); line-height: 1.5; }
+
+.comments-form { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.comment-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  padding: 8px 10px;
+  resize: none;
+  height: 70px;
+  outline: none;
+  transition: border-color .15s;
+}
+.comment-input:focus { border-color: var(--gold); }
+.comment-form-row { display: flex; align-items: center; justify-content: space-between; }
+.comment-chars { font-size: 9px; color: var(--text-dim); }
+.comment-submit {
+  background: none;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .5px;
+}
+.comment-submit:hover { background: var(--gold-dim); }
+.comment-submit:disabled { opacity: .4; cursor: not-allowed; }
+
+.comments-auth-note { margin-top: 10px; }
+.comments-auth-note button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+.comments-auth-note button:hover { color: var(--gold); }

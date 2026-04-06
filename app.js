@@ -487,9 +487,29 @@ function openMobDetail(p) {
       <button id="mob-vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
+    <div class="d-sec d-comments-sec">
+      <div class="d-lbl">Comments <span id="mob-comments-count" class="d-comments-count"></span></div>
+      <div id="mob-comments-list" class="comments-list"></div>
+      <div id="mob-comments-form" class="comments-form" style="display:none">
+        <textarea id="mob-comment-input" class="comment-input" placeholder="share your field report..." maxlength="500"></textarea>
+        <div class="comment-form-row">
+          <span id="mob-comment-chars" class="comment-chars">500</span>
+          <button id="mob-comment-submit" class="comment-submit" onclick="submitComment('${esc(p.id)}','mob')">POST</button>
+        </div>
+      </div>
+      <div id="mob-comments-auth" class="comments-auth-note" style="display:none">
+        <button onclick="openAuthModal()">Sign in to comment</button>
+      </div>
+    </div>
   `;
   document.getElementById('mob-detail').classList.add('show');
   document.getElementById('mob-vote-btn').onclick = () => doVote(p.id);
+  const mobInput = document.getElementById('mob-comment-input');
+  if (mobInput) mobInput.oninput = () => {
+    const el = document.getElementById('mob-comment-chars');
+    if (el) el.textContent = 500 - mobInput.value.length;
+  };
+  loadComments(p.id, 'mob');
 }
 
 function closeMobDetail() {
@@ -522,8 +542,28 @@ function renderDetail(p) {
       <button id="vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
+    <div class="d-sec d-comments-sec">
+      <div class="d-lbl">Comments <span id="desk-comments-count" class="d-comments-count"></span></div>
+      <div id="desk-comments-list" class="comments-list"></div>
+      <div id="desk-comments-form" class="comments-form" style="display:none">
+        <textarea id="desk-comment-input" class="comment-input" placeholder="share your field report..." maxlength="500"></textarea>
+        <div class="comment-form-row">
+          <span id="desk-comment-chars" class="comment-chars">500</span>
+          <button id="desk-comment-submit" class="comment-submit" onclick="submitComment('${esc(p.id)}','desk')">POST</button>
+        </div>
+      </div>
+      <div id="desk-comments-auth" class="comments-auth-note" style="display:none">
+        <button onclick="openAuthModal()">Sign in to comment</button>
+      </div>
+    </div>
   `;
   document.getElementById('vote-btn').onclick = () => doVote(p.id);
+  const deskInput = document.getElementById('desk-comment-input');
+  if (deskInput) deskInput.oninput = () => {
+    const el = document.getElementById('desk-comment-chars');
+    if (el) el.textContent = 500 - deskInput.value.length;
+  };
+  loadComments(p.id, 'desk');
 }
 
 async function doVote(id) {
@@ -844,6 +884,115 @@ async function submitPlace() {
   }
   setSafety(3);
   sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
+}
+
+// ── COMMENTS ──
+let commentCooldown = false;
+
+function commentAuthorName(user) {
+  if (!user) return 'anon';
+  const wallet = user.user_metadata?.address;
+  if (wallet) return wallet.slice(0,6) + '…' + wallet.slice(-4);
+  if (user.email) return user.email.split('@')[0];
+  return 'anon';
+}
+
+async function loadComments(placeId, ctx) {
+  const prefix = ctx === 'mob' ? 'mob' : 'desk';
+  const listEl  = document.getElementById(prefix + '-comments-list');
+  const countEl = document.getElementById(prefix + '-comments-count');
+  const formEl  = document.getElementById(prefix + '-comments-form');
+  const authEl  = document.getElementById(prefix + '-comments-auth');
+  if (!listEl) return;
+
+  listEl.innerHTML = '<div class="comments-loading">loading...</div>';
+
+  const { data, error } = await sb
+    .from('place_comments')
+    .select('id, author_name, text, created_at')
+    .eq('place_id', placeId)
+    .order('created_at', { ascending: true })
+    .limit(20);
+
+  if (error) { listEl.innerHTML = '<div class="comments-empty">could not load comments</div>'; return; }
+
+  if (countEl) countEl.textContent = data.length ? `(${data.length})` : '';
+  listEl.innerHTML = data.length
+    ? data.map(c => `
+        <div class="comment-item">
+          <div class="comment-meta">
+            <span class="comment-author">${esc(c.author_name)}</span>
+            <span class="comment-time">${formatCommentTime(c.created_at)}</span>
+          </div>
+          <div class="comment-text">${esc(c.text)}</div>
+        </div>`).join('')
+    : '<div class="comments-empty">no comments yet — be the first degen</div>';
+
+  // form visibility
+  if (currentUser) {
+    if (formEl) formEl.style.display = 'block';
+    if (authEl) authEl.style.display = 'none';
+  } else {
+    if (formEl) formEl.style.display = 'none';
+    if (authEl) authEl.style.display = 'block';
+  }
+}
+
+function formatCommentTime(ts) {
+  const d = new Date(ts);
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+}
+
+async function submitComment(placeId, ctx) {
+  if (!currentUser) { openAuthModal(); return; }
+  if (commentCooldown) { toast('ser — wait a bit between comments'); return; }
+
+  const prefix = ctx === 'mob' ? 'mob' : 'desk';
+  const inputEl  = document.getElementById(prefix + '-comment-input');
+  const submitEl = document.getElementById(prefix + '-comment-submit');
+  const text = inputEl?.value.trim();
+  if (!text) return;
+  if (text.length > 500) { toast('comment too long — 500 chars max'); return; }
+
+  if (submitEl) { submitEl.disabled = true; submitEl.textContent = '...'; }
+
+  const author_name = commentAuthorName(currentUser);
+  const { error } = await sb.from('place_comments').insert({
+    place_id: placeId,
+    user_id: currentUser.id,
+    author_name,
+    text
+  });
+
+  if (error) {
+    const msg = error.message?.includes('rate_limit_exceeded')
+      ? 'ser — too many comments, slow down'
+      : 'error posting comment';
+    toast(msg);
+    if (submitEl) { submitEl.disabled = false; submitEl.textContent = 'POST'; }
+    return;
+  }
+
+  if (inputEl) inputEl.value = '';
+  const charsEl = document.getElementById(prefix + '-comment-chars');
+  if (charsEl) charsEl.textContent = '500';
+  if (submitEl) { submitEl.disabled = false; submitEl.textContent = 'POST'; }
+
+  // cooldown 30s
+  commentCooldown = true;
+  if (submitEl) submitEl.disabled = true;
+  setTimeout(() => {
+    commentCooldown = false;
+    const el = document.getElementById(prefix + '-comment-submit');
+    if (el) el.disabled = false;
+  }, 30000);
+
+  await loadComments(placeId, ctx);
+  toast('comment posted 🛌');
 }
 
 // ── COORD PARSER + MINIMAP ──
