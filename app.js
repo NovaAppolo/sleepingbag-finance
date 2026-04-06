@@ -56,7 +56,6 @@ async function offerSwitch() {
 }
 
 async function connectWallet() {
-  const btn = document.getElementById('wallet-btn');
   if (walletAddress) { disconnectWallet(); return; }
   if (!window.ethereum) { toast('ser install MetaMask first'); return; }
   try {
@@ -80,7 +79,7 @@ function disconnectWallet() {
   toast('wallet disconnected');
 }
 
-// auto-reconnect
+// auto-reconnect wallet (не трогает auth session)
 window.addEventListener('load', async () => {
   if (!window.ethereum) return;
   const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -127,6 +126,138 @@ function getAnonId() {
 }
 const ANON_ID = getAnonId();
 
+// ── AUTH STATE ──
+let currentUser = null;
+
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session?.user ?? null;
+  updateAuthUI();
+
+  sb.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user ?? null;
+    updateAuthUI();
+    if (currentUser) closeAuthModal();
+  });
+}
+
+function updateAuthUI() {
+  const addBtn = document.getElementById('add-btn');
+  // кнопка ADD SPOT всегда видна, gating — внутри openModal()
+  // можно добавить display name в header позже (step 3)
+}
+
+async function signInWithWallet() {
+  if (!window.ethereum) {
+    toast('ser install MetaMask first');
+    return;
+  }
+  try {
+    const authModalWalletBtn = document.getElementById('auth-wallet-btn');
+    if (authModalWalletBtn) authModalWalletBtn.textContent = 'signing...';
+
+    const { data, error } = await sb.auth.signInWithWeb3({
+      chain: 'ethereum',
+      statement: 'Sign in to SleepingBag.finance — the rekt campers atlas.'
+    });
+
+    if (error) {
+      toast('wallet sign-in failed: ' + error.message);
+      if (authModalWalletBtn) authModalWalletBtn.textContent = '🦊 Continue with Wallet';
+      return;
+    }
+
+    // после успешного auth — обновляем wallet state тоже
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length) {
+        walletProvider = new ethers.BrowserProvider(window.ethereum);
+        walletAddress = accounts[0];
+        await checkNetwork();
+        updateWalletBtn();
+      }
+    }
+    toast('gm ser 🛌 wallet connected');
+  } catch (e) {
+    toast('wallet sign-in error');
+    const btn = document.getElementById('auth-wallet-btn');
+    if (btn) btn.textContent = '🦊 Continue with Wallet';
+  }
+}
+
+async function signInWithEmail() {
+  const input = document.getElementById('auth-email-input');
+  const email = input?.value.trim();
+  if (!email || !email.includes('@')) { toast('ser — enter a valid email'); return; }
+
+  const btn = document.getElementById('auth-email-btn');
+  if (btn) btn.textContent = 'sending...';
+
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: 'https://sleepingbag.finance' }
+  });
+
+  if (error) {
+    toast('error: ' + error.message);
+    if (btn) btn.textContent = 'Send Magic Link';
+    return;
+  }
+
+  // показываем confirmation state внутри modal
+  const body = document.getElementById('auth-modal-body');
+  if (body) {
+    body.innerHTML = `
+      <div class="auth-sent">
+        <div class="auth-sent-icon">📬</div>
+        <div class="auth-sent-title">Check your inbox</div>
+        <div class="auth-sent-text">Magic link sent to <b>${esc(email)}</b><br>Click it to sign in — no password needed.</div>
+      </div>
+    `;
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  updateAuthUI();
+  toast('signed out ser');
+}
+
+// ── AUTH MODAL ──
+function openAuthModal() {
+  const modal = document.getElementById('auth-modal-bg');
+  if (!modal) return;
+  // reset body на случай если был email-sent state
+  document.getElementById('auth-modal-body').innerHTML = authModalBodyHTML();
+  modal.classList.add('open');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal-bg')?.classList.remove('open');
+}
+
+function closeAuthBg(e) {
+  if (e.target === document.getElementById('auth-modal-bg')) closeAuthModal();
+}
+
+function authModalBodyHTML() {
+  const hasEthereum = typeof window.ethereum !== 'undefined';
+  return `
+    ${hasEthereum ? `
+    <button class="auth-wallet-btn" id="auth-wallet-btn" onclick="signInWithWallet()">
+      🦊 Continue with Wallet
+    </button>
+    <div class="auth-or"><span>or</span></div>
+    ` : ''}
+    <div class="auth-email-group">
+      <input class="auth-email-input" id="auth-email-input" type="email" placeholder="your@email.com" autocomplete="email">
+      <button class="auth-email-btn" id="auth-email-btn" onclick="signInWithEmail()">Send Magic Link</button>
+    </div>
+    <div class="auth-note">No account? Created automatically on first sign in.</div>
+  `;
+}
+
 const PLACES = [
   { id:1,  name:"Barceloneta North End",      city:"Barcelona, Spain",        type:"beach",   desc:"Soft sand, warm nights May–Oct. 4G to watch your portfolio bleed all night. Mossos patrol at 3am but they've seen worse degens than you, fren.", safety:4, votes:312, tags:["wifi","4g","warm","scenic","police-occasional"], gold:true,  lat:41.385,  lng:2.196   },
   { id:2,  name:"Pompidou Rooftop Adjacent",  city:"Paris, France",            type:"rooftop", desc:"Pigeons will judge you. Panoramic view of the city you can no longer afford. Wind is brutal after midnight. Bring two sleeping bags, ser.", safety:2, votes:89,  tags:["scenic","windy","pigeons","security-risk"], gold:false, lat:48.861,  lng:2.352   },
@@ -171,7 +302,7 @@ const map = new mapboxgl.Map({
 });
 map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
 map.on('load', async () => {
-  // загружаем места из Supabase
+  await initAuth();
   const { data, error } = await sb.from('places').select('*').order('votes_count', { ascending: false });
   if (data && !error) {
     PLACES.length = 0;
@@ -263,7 +394,7 @@ function buildMarkers() {
 
 function highlightMarker(id) {
   Object.entries(markers).forEach(([mid, { el, col }]) => {
-    el.style.boxShadow = parseInt(mid) === id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`;
+    el.style.boxShadow = mid === id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`;
   });
 }
 
@@ -317,11 +448,12 @@ function openMobDetail(p) {
       <div class="d-tags">${p.tags.map(t => `<div class="d-tag">#${esc(t)}</div>`).join('')}</div>
     </div>
     <div class="d-vote-row">
-      <button id="mob-vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
+      <button id="mob-vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
   `;
   document.getElementById('mob-detail').classList.add('show');
+  document.getElementById('mob-vote-btn').onclick = () => doVote(p.id);
 }
 
 function closeMobDetail() {
@@ -351,10 +483,11 @@ function renderDetail(p) {
     </div>
     <div class="d-sec"><div class="d-lbl">Tags</div><div class="d-tags">${p.tags.map(t=>`<div class="d-tag">#${esc(t)}</div>`).join('')}</div></div>
     <div class="d-vote-row">
-      <button id="vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
+      <button id="vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
   `;
+  document.getElementById('vote-btn').onclick = () => doVote(p.id);
 }
 
 async function doVote(id) {
@@ -378,13 +511,29 @@ function renderList() {
   const sorted = [...arr].sort((a,b) => b.votes - a.votes);
   const dots = n => Array(5).fill(0).map((_,i) => `<div class="sd${i<n?' on':''}"></div>`).join('');
   const makeHtml = (mob) => sorted.map(p => `
-    <div class="card${p.id===selId?' active':''}" onclick="${mob?`mobSelPlace(${p.id})`:`sel(${p.id},true)`}">
+    <div class="card${p.id===selId?' active':''}" data-id="${esc(p.id)}" data-mob="${mob}">
       <div class="card-row1"><div class="card-name">${p.gold?'★ ':''}${esc(p.name)}</div><div class="ctag t-${p.type}">${p.type}</div></div>
       <div class="card-city">${esc(p.city)}</div>
       <div class="card-row2"><div class="sdots">${dots(p.safety)}</div><div class="cvotes"><b>${p.votes}</b> votes</div></div>
     </div>`).join('');
-  document.getElementById('list').innerHTML = makeHtml(false);
-  document.getElementById('mob-list').innerHTML = makeHtml(true);
+
+  const listEl = document.getElementById('list');
+  const mobListEl = document.getElementById('mob-list');
+  listEl.innerHTML = makeHtml(false);
+  mobListEl.innerHTML = makeHtml(true);
+
+  // event delegation — работает с UUID
+  listEl.onclick = e => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    sel(card.dataset.id, true);
+  };
+  mobListEl.onclick = e => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    mobSelPlace(card.dataset.id);
+  };
+
   document.querySelector('#list .card.active')?.scrollIntoView({ block: 'nearest' });
 }
 
@@ -455,7 +604,6 @@ const SEED_MESSAGES = [
 
 async function initChat() {
   const container = document.getElementById('chat-messages');
-  // загружаем последние 50 сообщений
   const { data: raw } = await sb.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(50);
   const data = raw ? raw.reverse() : null;
   const msgs = (data && data.length) ? data : SEED_MESSAGES;
@@ -465,10 +613,8 @@ async function initChat() {
     time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}) : m.time
   })));
   container.scrollTop = container.scrollHeight;
-  // realtime подписка
   sb.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
     const m = payload.new;
-    // не дублируем своё сообщение
     if (m.anon_id === ANON_ID) return;
     container.appendChild(buildMsgEl({
       name: m.author_name,
@@ -533,9 +679,14 @@ async function sendChat() {
   if (error) { msgEl.remove(); toast('message not saved — check connection'); }
 }
 
-// ── MODAL ──
+// ── MODAL (add spot — gated) ──
 function openModal() {
-  toast('Adding spots requires login — coming soon ser 🔜', 4000);
+  if (!currentUser) {
+    openAuthModal();
+    return;
+  }
+  // auth user: открываем форму, но submit заблокирован до step 3
+  document.getElementById('modal-bg').classList.add('open');
 }
 function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
 function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
@@ -544,8 +695,9 @@ function setSafety(n) {
   document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('on', i+1===n));
 }
 
+// submit заблокирован до step 3 — форма открывается, но не сохраняет
 async function submitPlace() {
-  toast('Adding spots requires login — coming soon ser 🔜', 4000);
+  toast('spot submission coming soon — stay rekt ser 🛌');
 }
 
 // ── TOAST ──
