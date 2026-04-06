@@ -863,7 +863,7 @@ function buildMarkers() {
 
 function highlightMarker(id) {
   Object.entries(markers).forEach(([mid, { el, col }]) => {
-    el.style.boxShadow = parseInt(mid) === id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`;
+    el.style.boxShadow = mid === id ? `0 0 0 8px ${col}66` : `0 0 0 3px ${col}44`;
   });
 }
 
@@ -917,7 +917,7 @@ function openMobDetail(p) {
       <div class="d-tags">${p.tags.map(t => `<div class="d-tag">#${esc(t)}</div>`).join('')}</div>
     </div>
     <div class="d-vote-row">
-      <button id="mob-vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
+      <button id="mob-vote-btn" class="${isVoted?'voted':''}" onclick="doVote('${p.id}')">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
   `;
@@ -951,7 +951,7 @@ function renderDetail(p) {
     </div>
     <div class="d-sec"><div class="d-lbl">Tags</div><div class="d-tags">${p.tags.map(t=>`<div class="d-tag">#${esc(t)}</div>`).join('')}</div></div>
     <div class="d-vote-row">
-      <button id="vote-btn" class="${isVoted?'voted':''}" onclick="doVote(${p.id})">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
+      <button id="vote-btn" class="${isVoted?'voted':''}" onclick="doVote('${p.id}')">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
   `;
@@ -978,7 +978,7 @@ function renderList() {
   const sorted = [...arr].sort((a,b) => b.votes - a.votes);
   const dots = n => Array(5).fill(0).map((_,i) => `<div class="sd${i<n?' on':''}"></div>`).join('');
   const makeHtml = (mob) => sorted.map(p => `
-    <div class="card${p.id===selId?' active':''}" onclick="${mob?`mobSelPlace(${p.id})`:`sel(${p.id},true)`}">
+    <div class="card${p.id===selId?' active':''}" onclick="${mob?`mobSelPlace('${p.id}')`:`sel('${p.id}',true)`}">
       <div class="card-row1"><div class="card-name">${p.gold?'★ ':''}${esc(p.name)}</div><div class="ctag t-${p.type}">${p.type}</div></div>
       <div class="card-city">${esc(p.city)}</div>
       <div class="card-row2"><div class="sdots">${dots(p.safety)}</div><div class="cvotes"><b>${p.votes}</b> votes</div></div>
