@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -713,6 +714,19 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <script>
 mapboxgl.accessToken = 'pk.eyJ1Ijoia29kYWtnb2xkIiwiYSI6ImNtbm1jcnp4NDFlcW4yc3MxdGNpbjd0amUifQ.dsA_k9-ASZ-2OAmgmt7Pew';
 
+const sb = supabase.createClient(
+  'https://fhfrocvcbmkoidlvbury.supabase.co',
+  'sb_publishable_vT2HG-9np9RLJlLJ_gcUjw__aqiiUwo'
+);
+
+// anon_id — постоянный ID устройства
+function getAnonId() {
+  let id = localStorage.getItem('sbf_anon_id');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('sbf_anon_id', id); }
+  return id;
+}
+const ANON_ID = getAnonId();
+
 const PLACES = [
   { id:1,  name:"Barceloneta North End",      city:"Barcelona, Spain",        type:"beach",   desc:"Soft sand, warm nights May–Oct. 4G to watch your portfolio bleed all night. Mossos patrol at 3am but they've seen worse degens than you, fren.", safety:4, votes:312, tags:["wifi","4g","warm","scenic","police-occasional"], gold:true,  lat:41.385,  lng:2.196   },
   { id:2,  name:"Pompidou Rooftop Adjacent",  city:"Paris, France",            type:"rooftop", desc:"Pigeons will judge you. Panoramic view of the city you can no longer afford. Wind is brutal after midnight. Bring two sleeping bags, ser.", safety:2, votes:89,  tags:["scenic","windy","pigeons","security-risk"], gold:false, lat:48.861,  lng:2.352   },
@@ -756,7 +770,19 @@ const map = new mapboxgl.Map({
   projection: 'mercator'
 });
 map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-map.on('load', () => { buildMarkers(); renderList(); updateStats(); initChat(); });
+map.on('load', async () => {
+  // загружаем места из Supabase
+  const { data, error } = await sb.from('places').select('*').order('votes_count', { ascending: false });
+  if (data && !error) {
+    PLACES.length = 0;
+    data.forEach(p => PLACES.push({
+      id: p.id, name: p.name, city: p.city, type: p.type,
+      desc: p.description, safety: p.safety, votes: p.votes_count,
+      tags: p.tags || [], gold: p.gold, lat: p.lat, lng: p.lng
+    }));
+  }
+  buildMarkers(); renderList(); updateStats(); initChat();
+});
 map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
 
 // ── XSS PROTECTION ──
@@ -931,9 +957,10 @@ function renderDetail(p) {
   `;
 }
 
-// ── VOTE ──
-function doVote(id) {
+async function doVote(id) {
   if (voted.has(id)) { toast('ser you already voted'); return; }
+  const { error } = await sb.from('place_votes').insert({ place_id: id, anon_id: ANON_ID });
+  if (error) { toast(error.code === '23505' ? 'ser you already voted' : 'error voting'); return; }
   const p = PLACES.find(x => x.id === id);
   if (!p) return;
   p.votes++;
@@ -1026,13 +1053,30 @@ const SEED_MESSAGES = [
   { name: 'system', text: '— global chat · no auth required · be a degen —', time: '' },
 ];
 
-function initChat() {
+async function initChat() {
   const container = document.getElementById('chat-messages');
-  let saved = [];
-  try { saved = JSON.parse(localStorage.getItem('sbf_chat') || '[]'); } catch(e) {}
-  const msgs = saved.length ? saved : SEED_MESSAGES;
-  msgs.forEach(m => container.appendChild(buildMsgEl(m)));
+  // загружаем последние 50 сообщений
+  const { data: raw } = await sb.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(50);
+  const data = raw ? raw.reverse() : null;
+  const msgs = (data && data.length) ? data : SEED_MESSAGES;
+  msgs.forEach(m => container.appendChild(buildMsgEl({
+    name: m.author_name || m.name,
+    text: m.text,
+    time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}) : m.time
+  })));
   container.scrollTop = container.scrollHeight;
+  // realtime подписка
+  sb.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
+    const m = payload.new;
+    // не дублируем своё сообщение
+    if (m.anon_id === ANON_ID) return;
+    container.appendChild(buildMsgEl({
+      name: m.author_name,
+      text: m.text,
+      time: new Date(m.created_at).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'})
+    }));
+    container.scrollTop = container.scrollHeight;
+  }).subscribe();
 }
 
 function buildMsgEl({ name, text, time }) {
@@ -1072,7 +1116,7 @@ function chatKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
 }
 
-function sendChat() {
+async function sendChat() {
   const nameEl = document.getElementById('chat-name-input');
   const textEl = document.getElementById('chat-text-input');
   const text = textEl.value.trim();
@@ -1080,17 +1124,13 @@ function sendChat() {
   const name = nameEl.value.trim() || 'anon';
   const now = new Date();
   const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-  const msg = { name, text, time };
-  const container = document.getElementById('chat-messages');
-  container.appendChild(buildMsgEl(msg));
-  container.scrollTop = container.scrollHeight;
   textEl.value = '';
-  try {
-    let saved = JSON.parse(localStorage.getItem('sbf_chat') || '[]');
-    saved.push(msg);
-    if (saved.length > 100) saved = saved.slice(-100);
-    localStorage.setItem('sbf_chat', JSON.stringify(saved));
-  } catch(e) {}
+  const container = document.getElementById('chat-messages');
+  const msgEl = buildMsgEl({ name, text, time });
+  container.appendChild(msgEl);
+  container.scrollTop = container.scrollHeight;
+  const { error } = await sb.from('chat_messages').insert({ text, author_name: name, anon_id: ANON_ID });
+  if (error) { msgEl.remove(); toast('message not saved — check connection'); }
 }
 
 // ── MODAL ──
@@ -1102,7 +1142,7 @@ function setSafety(n) {
   document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('on', i+1===n));
 }
 
-function submitPlace() {
+async function submitPlace() {
   const name = document.getElementById('f-name').value.trim();
   const city = document.getElementById('f-city').value.trim();
   const type = document.getElementById('f-type').value;
@@ -1114,7 +1154,11 @@ function submitPlace() {
   if (isNaN(lat) || isNaN(lng)) { toast('ser — add coordinates'); return; }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
   const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean) : ['degen'];
-  const p = { id: nextId++, name, city, type, desc, safety, votes: 1, tags, gold: false, lat, lng };
+  const { data, error } = await sb.from('places').insert({
+    name, city, type, description: desc, safety, lat, lng, tags, gold: false, is_hidden: false, votes_count: 0
+  }).select().single();
+  if (error) { toast('error saving spot'); return; }
+  const p = { id: data.id, name, city, type, desc, safety, votes: 0, tags, gold: false, lat, lng };
   PLACES.push(p);
   closeModal();
   toast('📍 Spot added! NGMI but at least you have a place to sleep.');
