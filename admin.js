@@ -135,8 +135,31 @@ window.addEventListener('load', async () => {
 const typeCols = { rooftop: '#c8a96e', beach: '#4a9e6a', park: '#4a9e6a', forest: '#4a9e6a', bridge: '#e84040', other: '#888' };
 
 async function loadPlaces() {
-  const { data, error } = await sb.from('places').select('*').order('created_at', { ascending: false });
-  if (error || !data) { return; }
+  // читаем через edge function — service role bypasses RLS, видим все статусы
+  let data;
+  try {
+    const provider  = new ethers.BrowserProvider(window.ethereum);
+    const signer    = await provider.getSigner();
+    const wallet    = await signer.getAddress();
+    const ts        = Math.floor(Date.now() / 1000);
+    const message   = `sleepingbag-admin:${ts}`;
+    const signature = await signer.signMessage(message);
+
+    const resp = await fetch(
+      'https://fhfrocvcbmkoidlvbury.supabase.co/functions/v1/admin-places',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet, message, signature })
+      }
+    );
+    const result = await resp.json();
+    if (!resp.ok) { alert('Load error: ' + (result.error || resp.status)); return; }
+    data = result.places;
+  } catch (e) {
+    alert('Load failed: ' + e.message);
+    return;
+  }
 
   // stats — используем status вместо is_hidden
   const approved = data.filter(p => p.status === 'approved').length;
