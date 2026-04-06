@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SleepingBag.finance — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <a href="/" id="logo">SleepingBag<span>.finance</span></a>
+  <div class="h-badge">ADMIN · READ-ONLY</div>
+  <div class="h-right">
+    <button id="wallet-btn" onclick="connectWallet()">🔗 CONNECT WALLET</button>
+  </div>
+</div>
+
+<!-- STATE: connect wallet -->
+<div id="state-connect" class="state-screen">
+  <div class="state-icon">🔐</div>
+  <div class="state-title">Admin Access</div>
+  <div class="state-text">Connect your admin wallet to continue.</div>
+  <button class="state-btn" onclick="connectWallet()">CONNECT WALLET</button>
+</div>
+
+<!-- STATE: access denied -->
+<div id="state-denied" class="state-screen" style="display:none">
+  <div class="state-icon">🚫</div>
+  <div class="state-title">Access Denied</div>
+  <div class="state-text">This wallet is not authorized.<br><span id="denied-addr"></span></div>
+  <button class="state-btn" onclick="disconnectWallet()">DISCONNECT</button>
+</div>
+
+<!-- STATE: wrong network -->
+<div id="state-network" class="state-screen" style="display:none">
+  <div class="state-icon">⚠</div>
+  <div class="state-title">Wrong Network</div>
+  <div class="state-text">Switch to Base to access admin panel.</div>
+  <button class="state-btn" onclick="switchToBase()">SWITCH TO BASE</button>
+</div>
+
+<!-- STATE: admin dashboard -->
+<div id="state-admin" style="display:none">
+  <div id="dashboard">
+    <div class="dash-header">
+      <div class="dash-title">Places Dashboard</div>
+      <div class="dash-subtitle">read-only · admin actions coming soon</div>
+    </div>
+    <div class="dash-stats">
+      <div class="stat-box"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">TOTAL</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-visible">0</div><div class="stat-lbl">VISIBLE</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-hidden">0</div><div class="stat-lbl">HIDDEN</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-votes">0</div><div class="stat-lbl">TOTAL VOTES</div></div>
+    </div>
+    <div class="dash-note">⚠ RLS limits: only visible places shown. Hidden places require edge function (next step).</div>
+    <div id="table-wrap">
+      <table id="places-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>City</th>
+            <th>Type</th>
+            <th>Safety</th>
+            <th>Votes</th>
+            <th>Gold</th>
+            <th>Hidden</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="places-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
