@@ -40,6 +40,7 @@
 
   <div class="h-right">
     <button id="chat-btn" onclick="toggleChat()">💬 CHAT</button>
+    <div id="auth-indicator"></div>
     <button id="wallet-btn" onclick="connectWallet()">🔗 CONNECT</button>
     <button id="add-btn" onclick="openModal()">+ ADD SPOT</button>
   </div>
@@ -102,6 +103,7 @@
     <div id="mob-drawer-title">Rekt Atlas</div>
     <div id="mob-spot-count"><b id="mob-stat-spots">0</b> spots</div>
   </div>
+  <div id="mob-auth-row"></div>
   <div id="mob-filter-row">
     <button class="mob-fbtn on" onclick="setFilter('all',this,'mobile')">ALL</button>
     <button class="mob-fbtn" onclick="setFilter('rooftop',this,'mobile')">ROOF</button>
@@ -213,7 +215,14 @@
         <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
       </div>
       <div class="fhint" style="margin-bottom:12px">Google Maps → правый клик → первая строка = координаты</div>
-      <div class="fhint" style="color:var(--gold);margin-bottom:12px">⚡ Spot submission coming soon — stay rekt ser</div>
+      <div class="fg">
+        <label class="fl">Photo <span style="color:var(--red)">*required</span></label>
+        <label class="f-photo-wrap" id="f-photo-wrap">
+          <span id="f-photo-label">Choose photo</span>
+          <input type="file" id="f-photo" accept="image/*" onchange="onPhotoChange(this)">
+        </label>
+        <div class="fhint">max 5MB · jpg / png / webp</div>
+      </div>
       <button id="fsub" onclick="submitPlace()">APE IN — ADD SPOT</button>
     </div>
   </div>

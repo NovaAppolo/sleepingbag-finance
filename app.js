@@ -142,9 +142,26 @@ async function initAuth() {
 }
 
 function updateAuthUI() {
-  const addBtn = document.getElementById('add-btn');
-  // кнопка ADD SPOT всегда видна, gating — внутри openModal()
-  // можно добавить display name в header позже (step 3)
+  const indicator = document.getElementById('auth-indicator');
+  const mobRow = document.getElementById('mob-auth-row');
+  if (currentUser) {
+    const email = currentUser.email;
+    const wallet = currentUser.user_metadata?.address;
+    const label = wallet
+      ? wallet.slice(0,6) + '\u2026' + wallet.slice(-4)
+      : email
+        ? email.split('@')[0]
+        : 'anon';
+    const inner =
+      '<span class="auth-ind-dot on"></span>' +
+      '<span class="auth-ind-label">' + esc(label) + '</span>' +
+      '<button class="auth-ind-out" onclick="signOut()">sign out</button>';
+    if (indicator) { indicator.innerHTML = inner; indicator.classList.add('visible'); }
+    if (mobRow) { mobRow.innerHTML = inner; mobRow.classList.add('visible'); }
+  } else {
+    if (indicator) { indicator.innerHTML = ''; indicator.classList.remove('visible'); }
+    if (mobRow) { mobRow.innerHTML = ''; mobRow.classList.remove('visible'); }
+  }
 }
 
 async function signInWithWallet() {
@@ -695,9 +712,83 @@ function setSafety(n) {
   document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('on', i+1===n));
 }
 
-// submit заблокирован до step 3 — форма открывается, но не сохраняет
+function onPhotoChange(input) {
+  const label = document.getElementById('f-photo-label');
+  const wrap  = document.getElementById('f-photo-wrap');
+  if (input.files && input.files[0]) {
+    label.textContent = input.files[0].name;
+    wrap.classList.add('has-file');
+  } else {
+    label.textContent = 'Choose photo';
+    wrap.classList.remove('has-file');
+  }
+}
+
+// ── SUBMIT PLACE (step 3) ──
 async function submitPlace() {
-  toast('spot submission coming soon — stay rekt ser 🛌');
+  if (!currentUser) { openAuthModal(); return; }
+
+  const name    = document.getElementById('f-name').value.trim();
+  const city    = document.getElementById('f-city').value.trim();
+  const type    = document.getElementById('f-type').value;
+  const desc    = document.getElementById('f-desc').value.trim();
+  const tagsRaw = document.getElementById('f-tags').value.trim();
+  const lat     = parseFloat(document.getElementById('f-lat').value);
+  const lng     = parseFloat(document.getElementById('f-lng').value);
+  const fileInput = document.getElementById('f-photo');
+  const file    = fileInput?.files?.[0];
+
+  if (!name || !city || !desc)              { toast('ser — fill name, city and description'); return; }
+  if (isNaN(lat) || isNaN(lng))             { toast('ser — add coordinates'); return; }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
+  if (!file)                                { toast('ser — attach at least 1 photo'); return; }
+  if (file.size > 5 * 1024 * 1024)         { toast('photo too large — max 5MB'); return; }
+
+  const sub = document.getElementById('fsub');
+  sub.textContent = 'uploading...';
+  sub.disabled = true;
+
+  // 1. upload photo
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = currentUser.id + '/' + crypto.randomUUID() + '.' + ext;
+  const { error: upErr } = await sb.storage.from('place-photos').upload(path, file, { upsert: false });
+  if (upErr) {
+    toast('photo upload failed: ' + upErr.message);
+    sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
+    return;
+  }
+
+  const { data: urlData } = sb.storage.from('place-photos').getPublicUrl(path);
+  const photo_url = urlData.publicUrl;
+
+  // 2. insert place
+  const tags = tagsRaw
+    ? tagsRaw.split(',').map(t => t.trim().toLowerCase().replace(/\s+/g, '-')).filter(Boolean)
+    : ['degen'];
+
+  const { error: insErr } = await sb.from('places').insert({
+    name, city, type, description: desc, safety, lat, lng, tags,
+    gold: false, status: 'pending', created_by: currentUser.id, photo_url
+  });
+
+  if (insErr) {
+    toast('error saving spot: ' + insErr.message);
+    sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
+    return;
+  }
+
+  closeModal();
+  toast('📍 Spot submitted! Under review — WAGMI fren 🛌', 4000);
+
+  // reset form
+  ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('f-type').value = 'rooftop';
+  if (fileInput) fileInput.value = '';
+  document.getElementById('f-photo-label').textContent = 'Choose photo';
+  setSafety(3);
+  sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
 }
 
 // ── TOAST ──
