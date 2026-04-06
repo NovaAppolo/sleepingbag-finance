@@ -154,6 +154,19 @@
   </div>
 </div>
 
+<!-- AUTH MODAL -->
+<div id="auth-modal-bg" onclick="closeAuthBg(event)">
+  <div id="auth-modal">
+    <div class="auth-modal-head">
+      <div class="auth-modal-title">Sign in to SleepingBag.finance</div>
+      <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    </div>
+    <div class="auth-modal-body" id="auth-modal-body">
+      <!-- populated by authModalBodyHTML() -->
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ADD SPOT -->
 <div id="modal-bg" onclick="closeBg(event)">
   <div id="modal">
@@ -200,6 +213,7 @@
         <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
       </div>
       <div class="fhint" style="margin-bottom:12px">Google Maps → правый клик → первая строка = координаты</div>
+      <div class="fhint" style="color:var(--gold);margin-bottom:12px">⚡ Spot submission coming soon — stay rekt ser</div>
       <button id="fsub" onclick="submitPlace()">APE IN — ADD SPOT</button>
     </div>
   </div>
@@ -208,6 +222,5 @@
 <div id="toast"></div>
 
 <script src="app.js"></script>
-<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
