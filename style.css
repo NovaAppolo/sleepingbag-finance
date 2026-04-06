@@ -743,3 +743,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .f-photo-wrap input[type="file"] { display: none; }
 
 #fsub:disabled { opacity: .5; cursor: not-allowed; }
+
+/* popup photo */
+.pb-photo {
+  display: none;
+  width: 100%;
+  height: 110px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}

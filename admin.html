@@ -14,7 +14,7 @@
 <!-- HEADER -->
 <div id="header">
   <a href="/" id="logo">SleepingBag<span>.finance</span></a>
-  <div class="h-badge">ADMIN</div>
+  <div class="h-badge">ADMIN · READ-ONLY</div>
   <div class="h-right">
     <button id="wallet-btn" onclick="connectWallet()">🔗 CONNECT WALLET</button>
   </div>
@@ -49,26 +49,25 @@
   <div id="dashboard">
     <div class="dash-header">
       <div class="dash-title">Places Dashboard</div>
-      <div class="dash-subtitle">secure admin · approve / hide places</div>
+      <div class="dash-subtitle">read-only · admin actions coming soon</div>
     </div>
     <div class="dash-stats">
       <div class="stat-box"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">TOTAL</div></div>
-      <div class="stat-box"><div class="stat-val s-pending" id="s-pending">0</div><div class="stat-lbl">PENDING</div></div>
-      <div class="stat-box"><div class="stat-val" id="s-approved">0</div><div class="stat-lbl">APPROVED</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-visible">0</div><div class="stat-lbl">APPROVED</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-pending" style="color:var(--gold)">0</div><div class="stat-lbl">PENDING</div></div>
       <div class="stat-box"><div class="stat-val" id="s-hidden">0</div><div class="stat-lbl">HIDDEN</div></div>
       <div class="stat-box"><div class="stat-val" id="s-votes">0</div><div class="stat-lbl">TOTAL VOTES</div></div>
     </div>
+    <div class="dash-note">⚠ RLS limits: only visible places shown. Hidden places require edge function (next step).</div>
     <div id="table-wrap">
       <table id="places-table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Name</th>
             <th>City</th>
             <th>Type</th>
             <th>Safety</th>
             <th>Votes</th>
-            <th>Gold</th>
             <th>Status</th>
             <th>Created</th>
             <th>Actions</th>

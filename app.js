@@ -334,7 +334,8 @@ map.on('load', async () => {
     data.forEach(p => PLACES.push({
       id: p.id, name: p.name, city: p.city, type: p.type,
       desc: p.description, safety: p.safety, votes: p.votes_count,
-      tags: p.tags || [], gold: p.gold, lat: p.lat, lng: p.lng
+      tags: p.tags || [], gold: p.gold, lat: p.lat, lng: p.lng,
+      photo_url: p.photo_url || null
     }));
   }
   buildMarkers(); renderList(); updateStats(); initChat();
@@ -358,6 +359,16 @@ const popupBox = document.getElementById('popup-box');
 function showPopup(p) {
   popupPlaceId = p.id;
   const col = tcol(p.type);
+
+  // photo (только если есть)
+  const photoEl = document.getElementById('pb-photo');
+  if (p.photo_url) {
+    photoEl.style.backgroundImage = 'url(' + p.photo_url + ')';
+    photoEl.style.display = 'block';
+  } else {
+    photoEl.style.display = 'none';
+  }
+
   document.getElementById('pb-type').textContent = p.type.toUpperCase();
   document.getElementById('pb-type').style.color = col;
   document.getElementById('pb-name').textContent = (p.gold ? '★ ' : '') + p.name;
