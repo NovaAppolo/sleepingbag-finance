@@ -534,7 +534,9 @@ async function sendChat() {
 }
 
 // ── MODAL ──
-function openModal() { document.getElementById('modal-bg').classList.add('open'); }
+function openModal() {
+  toast('Adding spots requires login — coming soon ser 🔜', 4000);
+}
 function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
 function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
 function setSafety(n) {
@@ -543,35 +545,7 @@ function setSafety(n) {
 }
 
 async function submitPlace() {
-  const name = document.getElementById('f-name').value.trim();
-  const city = document.getElementById('f-city').value.trim();
-  const type = document.getElementById('f-type').value;
-  const desc = document.getElementById('f-desc').value.trim();
-  const tagsRaw = document.getElementById('f-tags').value.trim();
-  const lat = parseFloat(document.getElementById('f-lat').value);
-  const lng = parseFloat(document.getElementById('f-lng').value);
-  if (!name || !city || !desc) { toast('ser — fill name, city and description'); return; }
-  if (isNaN(lat) || isNaN(lng)) { toast('ser — add coordinates'); return; }
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
-  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean) : ['degen'];
-  const { data, error } = await sb.from('places').insert({
-    name, city, type, description: desc, safety, lat, lng, tags, gold: false, is_hidden: false, votes_count: 0
-  }).select().single();
-  if (error) { toast('error saving spot'); return; }
-  const p = { id: data.id, name, city, type, desc, safety, votes: 0, tags, gold: false, lat, lng };
-  PLACES.push(p);
-  closeModal();
-  toast('📍 Spot added! NGMI but at least you have a place to sleep.');
-  buildMarkers(); renderList(); updateStats();
-  if (isMobile()) {
-    map.flyTo({ center: [p.lng, p.lat], zoom: 12, duration: 800, essential: true });
-    setTimeout(() => openMobDetail(p), 300);
-  } else {
-    sel(p.id, true);
-  }
-  ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => { document.getElementById(id).value=''; });
-  document.getElementById('f-type').value = 'rooftop';
-  setSafety(3);
+  toast('Adding spots requires login — coming soon ser 🔜', 4000);
 }
 
 // ── TOAST ──
