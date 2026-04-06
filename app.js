@@ -338,7 +338,7 @@ map.on('load', async () => {
       photo_url: p.photo_url || null
     }));
   }
-  buildMarkers(); renderList(); updateStats(); initChat();
+  buildMarkers(); renderList(); updateStats(); initChat(); initPendingBanner();
 });
 map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
 
@@ -699,6 +699,7 @@ function chatKeydown(e) {
 }
 
 async function sendChat() {
+  if (chatCooldown) return;
   const nameEl = document.getElementById('chat-name-input');
   const textEl = document.getElementById('chat-text-input');
   const text = textEl.value.trim();
@@ -707,6 +708,7 @@ async function sendChat() {
   const now = new Date();
   const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   textEl.value = '';
+  setChatCooldown(10000);
   const container = document.getElementById('chat-messages');
   const msgEl = buildMsgEl({ name, text, time });
   container.appendChild(msgEl);
@@ -724,7 +726,19 @@ function openModal() {
   // auth user: открываем форму, но submit заблокирован до step 3
   document.getElementById('modal-bg').classList.add('open');
 }
-function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+  // minimap: proper destroy
+  if (minimapInstance) { try { minimapInstance.remove(); } catch(_) {} minimapInstance = null; minimapMarker = null; }
+  const minimap = document.getElementById('f-minimap');
+  if (minimap) { minimap.classList.remove('show'); minimap.innerHTML = ''; }
+  // coord paste
+  const coordPaste = document.getElementById('f-coord-paste');
+  if (coordPaste) coordPaste.value = '';
+  // photo preview
+  const preview = document.getElementById('f-photo-preview');
+  if (preview) { preview.innerHTML = ''; preview.classList.remove('show'); }
+}
 function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
 function setSafety(n) {
   safety = n;
@@ -734,12 +748,21 @@ function setSafety(n) {
 function onPhotoChange(input) {
   const label = document.getElementById('f-photo-label');
   const wrap  = document.getElementById('f-photo-wrap');
+  const preview = document.getElementById('f-photo-preview');
   if (input.files && input.files[0]) {
     label.textContent = input.files[0].name;
     wrap.classList.add('has-file');
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+      preview.classList.add('show');
+    };
+    reader.readAsDataURL(input.files[0]);
   } else {
     label.textContent = 'Choose photo';
     wrap.classList.remove('has-file');
+    preview.innerHTML = '';
+    preview.classList.remove('show');
   }
 }
 
@@ -761,6 +784,7 @@ async function submitPlace() {
   if (isNaN(lat) || isNaN(lng))             { toast('ser — add coordinates'); return; }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
   if (!file)                                { toast('ser — attach at least 1 photo'); return; }
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { toast('photo must be jpg, png or webp'); return; }
   if (file.size > 5 * 1024 * 1024)         { toast('photo too large — max 5MB'); return; }
 
   const sub = document.getElementById('fsub');
@@ -798,6 +822,7 @@ async function submitPlace() {
 
   closeModal();
   toast('📍 Spot submitted! Under review — WAGMI fren 🛌', 4000);
+  showPendingBanner();
 
   // reset form
   ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => {
@@ -806,8 +831,96 @@ async function submitPlace() {
   document.getElementById('f-type').value = 'rooftop';
   if (fileInput) fileInput.value = '';
   document.getElementById('f-photo-label').textContent = 'Choose photo';
+  const preview = document.getElementById('f-photo-preview');
+  if (preview) { preview.innerHTML = ''; preview.classList.remove('show'); }
+  const wrap = document.getElementById('f-photo-wrap');
+  if (wrap) wrap.classList.remove('has-file');
+  const coordPaste = document.getElementById('f-coord-paste');
+  if (coordPaste) coordPaste.value = '';
+  const minimap = document.getElementById('f-minimap');
+  if (minimap) {
+    if (minimapInstance) { try { minimapInstance.remove(); } catch(_) {} minimapInstance = null; }
+    minimap.classList.remove('show'); minimap.innerHTML = '';
+  }
   setSafety(3);
   sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
+}
+
+// ── COORD PARSER + MINIMAP ──
+let minimapInstance = null;
+let minimapMarker  = null;
+
+function parseCoordPaste(val) {
+  // форматы: "48.8566, 2.3522" / "48.8566,2.3522" / "48.8566 2.3522"
+  const m = val.replace(/\s+/g, ' ').match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
+  if (!m) return;
+  const lat = parseFloat(m[1]);
+  const lng = parseFloat(m[2]);
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+  document.getElementById('f-lat').value = lat.toFixed(6);
+  document.getElementById('f-lng').value = lng.toFixed(6);
+  showMinimap(lat, lng);
+}
+
+function onCoordManual() {
+  const lat = parseFloat(document.getElementById('f-lat').value);
+  const lng = parseFloat(document.getElementById('f-lng').value);
+  if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+    showMinimap(lat, lng);
+  }
+}
+
+function showMinimap(lat, lng) {
+  const wrap = document.getElementById('f-minimap');
+  wrap.classList.add('show');
+  if (!wrap.querySelector('#f-minimap-map')) {
+    wrap.innerHTML = '<div id="f-minimap-map"></div><div class="minimap-cross">+</div>';
+  }
+  if (!minimapInstance) {
+    minimapInstance = new mapboxgl.Map({
+      container: 'f-minimap-map',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [lng, lat],
+      zoom: 12,
+      interactive: true
+    });
+    minimapInstance.on('move', () => {
+      const c = minimapInstance.getCenter();
+      document.getElementById('f-lat').value = c.lat.toFixed(6);
+      document.getElementById('f-lng').value = c.lng.toFixed(6);
+    });
+  } else {
+    minimapInstance.setCenter([lng, lat]);
+  }
+}
+
+// ── PENDING BANNER ──
+const PENDING_KEY = 'sbf_has_pending';
+
+function showPendingBanner() {
+  localStorage.setItem(PENDING_KEY, '1');
+  const banner = document.getElementById('pending-banner');
+  if (banner) { banner.classList.add('show'); }
+}
+
+function initPendingBanner() {
+  if (localStorage.getItem(PENDING_KEY)) {
+    const banner = document.getElementById('pending-banner');
+    if (banner) banner.classList.add('show');
+  }
+}
+
+// ── CHAT COOLDOWN ──
+let chatCooldown = false;
+
+function setChatCooldown(ms) {
+  chatCooldown = true;
+  const btn = document.getElementById('chat-send');
+  if (btn) btn.disabled = true;
+  setTimeout(() => {
+    chatCooldown = false;
+    if (btn) btn.disabled = false;
+  }, ms);
 }
 
 // ── TOAST ──
