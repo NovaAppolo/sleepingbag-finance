@@ -157,8 +157,8 @@ async function initAuth() {
     currentUser = session?.user ?? null;
     updateAuthUI();
     updateWalletBtn();
-    if (currentUser) { closeAuthModal(); loadSaved(); }
-    else saved.clear();
+    if (currentUser) { closeAuthModal(); loadSaved(); loadVisited(); }
+    else { saved.clear(); visited.clear(); }
   });
 }
 
@@ -312,7 +312,8 @@ let markers = {};
 let popupPlaceId = null;
 let drawerExpanded = false;
 let chatOpen = false;
-let saved = new Set(); // place ids сохранённых мест
+let saved = new Set();   // place ids сохранённых мест
+let visited = new Set(); // place ids посещённых мест
 const isMobile = () => window.innerWidth <= 768;
 
 const tcol = t => ({ rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[t] || '#888');
@@ -341,7 +342,7 @@ map.on('load', async () => {
     }));
   }
   buildMarkers(); renderList(); updateStats(); initChat(); initPendingBanner();
-  if (currentUser) loadSaved();
+  if (currentUser) { loadSaved(); loadVisited(); }
 });
 map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
 
@@ -489,8 +490,12 @@ function openMobDetail(p) {
     <div class="d-vote-row">
       <button id="mob-vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
-      ${currentUser ? `<button id="mob-save-btn" class="save-btn${saved.has(p.id)?' saved':''}" data-id="${esc(p.id)}">${saved.has(p.id)?'★ SAVED':'☆ SAVE'}</button>` : ''}
     </div>
+    ${currentUser ? `
+    <div class="d-action-row">
+      <button id="mob-save-btn" class="save-btn${saved.has(p.id)?' saved':''}">${saved.has(p.id)?'★ SAVED':'☆ SAVE'}</button>
+      <button id="mob-visited-btn" class="visited-btn${visited.has(p.id)?' visited':''}">${visited.has(p.id)?'✓ VISITED':'✦ MARK VISITED'}</button>
+    </div>` : ''}
     <div class="d-sec d-comments-sec">
       <div class="d-lbl">Comments <span id="mob-comments-count" class="d-comments-count"></span></div>
       <div id="mob-comments-list" class="comments-list"></div>
@@ -509,6 +514,7 @@ function openMobDetail(p) {
   document.getElementById('mob-detail').classList.add('show');
   document.getElementById('mob-vote-btn').onclick = () => doVote(p.id);
   document.getElementById('mob-save-btn')?.addEventListener('click', () => toggleSaved(p.id, 'mob'));
+  document.getElementById('mob-visited-btn')?.addEventListener('click', () => toggleVisited(p.id, 'mob'));
   const mobInput = document.getElementById('mob-comment-input');
   if (mobInput) mobInput.oninput = () => {
     const el = document.getElementById('mob-comment-chars');
@@ -546,7 +552,10 @@ function renderDetail(p) {
     <div class="d-vote-row">
       <button id="vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="vote-count">${p.votes} <span>degens survived here</span></div>
-      ${currentUser ? `<button id="save-btn" class="save-btn${saved.has(p.id)?' saved':''}" data-id="${esc(p.id)}">${saved.has(p.id)?'★ SAVED':'☆ SAVE'}</button>` : ''}
+      ${currentUser ? `
+        <button id="save-btn" class="save-btn${saved.has(p.id)?' saved':''}">${saved.has(p.id)?'★ SAVED':'☆ SAVE'}</button>
+        <button id="visited-btn" class="visited-btn${visited.has(p.id)?' visited':''}">${visited.has(p.id)?'✓ VISITED':'✦ VISITED'}</button>
+      ` : ''}
     </div>
     <div class="d-sec d-comments-sec">
       <div class="d-lbl">Comments <span id="desk-comments-count" class="d-comments-count"></span></div>
@@ -565,6 +574,7 @@ function renderDetail(p) {
   `;
   document.getElementById('vote-btn').onclick = () => doVote(p.id);
   document.getElementById('save-btn')?.addEventListener('click', () => toggleSaved(p.id, 'desk'));
+  document.getElementById('visited-btn')?.addEventListener('click', () => toggleVisited(p.id, 'desk'));
   const deskInput = document.getElementById('desk-comment-input');
   if (deskInput) deskInput.oninput = () => {
     const el = document.getElementById('desk-comment-chars');
@@ -917,12 +927,42 @@ async function toggleSaved(placeId, ctx) {
     saved.add(placeId);
     toast('★ saved!');
   }
-  // обновляем кнопку без перерисовки всего detail
   const prefix = ctx === 'mob' ? 'mob-' : '';
   const btn = document.getElementById(prefix + 'save-btn');
   if (btn) {
     btn.classList.toggle('saved', saved.has(placeId));
     btn.textContent = saved.has(placeId) ? '★ SAVED' : '☆ SAVE';
+  }
+}
+
+async function loadVisited() {
+  if (!currentUser) return;
+  const { data } = await sb.from('visited_places').select('place_id').eq('user_id', currentUser.id);
+  visited.clear();
+  if (data) data.forEach(r => visited.add(r.place_id));
+}
+
+async function toggleVisited(placeId, ctx) {
+  if (!currentUser) { openAuthModal(); return; }
+  const isVisited = visited.has(placeId);
+  if (isVisited) {
+    const { error } = await sb.from('visited_places')
+      .delete().eq('user_id', currentUser.id).eq('place_id', placeId);
+    if (error) { toast('error removing visited'); return; }
+    visited.delete(placeId);
+    toast('removed from visited');
+  } else {
+    const { error } = await sb.from('visited_places')
+      .insert({ user_id: currentUser.id, place_id: placeId });
+    if (error) { toast('error marking visited'); return; }
+    visited.add(placeId);
+    toast('✦ marked as visited!');
+  }
+  const prefix = ctx === 'mob' ? 'mob-' : '';
+  const btn = document.getElementById(prefix + 'visited-btn');
+  if (btn) {
+    btn.classList.toggle('visited', visited.has(placeId));
+    btn.textContent = visited.has(placeId) ? '✓ VISITED' : '✦ MARK VISITED';
   }
 }
 

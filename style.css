@@ -830,6 +830,37 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .save-btn:hover { border-color: var(--gold); color: var(--gold); }
 .save-btn.saved { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
 
+.visited-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.visited-btn:hover { border-color: var(--green); color: var(--green); }
+.visited-btn.visited { border-color: var(--green); color: var(--green); background: rgba(74,158,106,.1); }
+
+/* mobile action row — SAVE + VISITED под vote-row */
+.d-action-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 0 0;
+}
+.d-action-row .save-btn,
+.d-action-row .visited-btn {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  font-size: 10px;
+}
+
 /* ── COMMENTS ── */
 .d-comments-sec { padding-bottom: 8px; }
 .d-comments-count { color: var(--text-dim); font-weight: 400; font-size: 9px; margin-left: 4px; }
