@@ -330,6 +330,7 @@ let searchSafetyMin = 0;
 let searchActiveTags = new Set();
 let searchTypeFilter = 'all';
 let searchExpanded = false;
+let _searchJustOpened = false;
 
 const tcol = t => ({ rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[t] || '#888');
 const safe_lbl = ['','extremely rekt','risky ser','degen approved','comfy homeless','ultra safe (tokyo tier)'];
@@ -668,6 +669,8 @@ function clearSearch() {
 function expandSearch() {
   if (searchExpanded) return;
   searchExpanded = true;
+  _searchJustOpened = true;
+  setTimeout(() => { _searchJustOpened = false; }, 200);
   buildTagPills();
   document.getElementById('search-overlay').classList.remove('search-collapsed');
   document.getElementById('search-overlay').classList.add('search-expanded');
@@ -787,9 +790,12 @@ document.getElementById('mob-safety-pills')?.addEventListener('click', e => {
 
 // close on Esc / click outside / dim click
 document.addEventListener('keydown', e => { if (e.key === 'Escape') collapseSearch(); });
-document.getElementById('search-dim').addEventListener('click', () => collapseSearch());
+document.getElementById('search-dim').addEventListener('click', () => {
+  if (_searchJustOpened) return;
+  collapseSearch();
+});
 document.addEventListener('click', e => {
-  if (!searchExpanded) return;
+  if (!searchExpanded || _searchJustOpened) return;
   const inside = e.target.closest('#search-overlay') || e.target.closest('#search-row');
   if (!inside) collapseSearch();
 });
