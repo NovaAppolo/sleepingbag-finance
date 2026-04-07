@@ -200,16 +200,23 @@ async function loadSpots() {
     body.innerHTML = '<div class="p-empty">no spots submitted yet \u2014 <a href="/" style="color:var(--gold)">add one</a></div>';
     return;
   }
-  const cls = { approved:'p-status-approved', pending:'p-status-pending', hidden:'p-status-hidden' };
+  const STATUS_MAP = {
+    approved: { label: 'LIVE ON MAP',    cls: 'p-status-approved', hint: 'visible to everyone' },
+    pending:  { label: 'UNDER REVIEW',   cls: 'p-status-pending',  hint: 'being reviewed by moderators' },
+    hidden:   { label: 'HIDDEN',         cls: 'p-status-hidden',   hint: 'not visible on the map' },
+    rejected: { label: 'NOT PUBLISHED',  cls: 'p-status-rejected', hint: 'did not pass moderation' },
+  };
   body.innerHTML = data.map(p => {
-    const date = new Date(p.created_at).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+    const date   = new Date(p.created_at).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+    const st     = STATUS_MAP[p.status] || STATUS_MAP.pending;
     return `<div class="p-spot-item">
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="p-spot-name">${esc(p.name)}</div>
-        <div class="p-spot-meta">${esc(p.city)} \u00b7 ${esc(p.type)} \u00b7 ${date}</div>
+        <div class="p-spot-meta">${esc(p.city)} \u00b7 ${esc(p.type)} \u00b7 added ${date}</div>
+        <div class="p-spot-hint">${st.hint}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-        <div class="p-status ${cls[p.status]||'p-status-pending'}">${p.status.toUpperCase()}</div>
+      <div style="display:flex;align-items:flex-start;gap:10px;flex-shrink:0;padding-top:2px">
+        <div class="p-status ${st.cls}">${st.label}</div>
         ${p.status==='approved'?`<a href="/?spot=${esc(p.id)}" class="p-spot-link">VIEW \u2192</a>`:''}
       </div>
     </div>`;

@@ -217,7 +217,10 @@ html, body { min-height: 100vh; background: var(--bg); color: var(--text); font-
 }
 .p-status-approved { color: var(--green); border-color: var(--green); }
 .p-status-pending  { color: var(--gold);  border-color: var(--gold); }
-.p-status-hidden   { color: var(--red);   border-color: var(--red); }
+.p-status-hidden   { color: var(--text-dim); border-color: var(--text-dim); }
+.p-status-rejected { color: var(--red);   border-color: var(--red); }
+
+.p-spot-hint { font-size: 9px; color: var(--text-dim); margin-top: 4px; letter-spacing: .3px; }
 
 /* ── COMMENTS LIST ── */
 .p-comment-item {
