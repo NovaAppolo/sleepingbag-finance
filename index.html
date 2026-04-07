@@ -59,12 +59,16 @@
         <button id="search-clear" onclick="clearSearch()" style="display:none">✕</button>
       </div>
     </div>
+
     <div id="list"></div>
   </div>
 
-  <!-- SEARCH EXPANDED OVERLAY (desktop) -->
-  <div id="search-overlay" class="search-collapsed">
-    <div id="search-panel">
+  <!-- MAP -->
+  <div id="map-wrap">
+    <div id="map"></div>
+
+    <!-- SEARCH OVERLAY (expanded) — must be in map-wrap to escape sidebar overflow:hidden -->
+    <div id="search-overlay" class="search-collapsed">
       <div id="sp-filters">
         <div class="sp-filter-group">
           <div class="sp-filter-label">TYPE</div>
@@ -78,7 +82,7 @@
           </div>
         </div>
         <div class="sp-filter-group">
-          <div class="sp-filter-label">SAFETY</div>
+          <div class="sp-filter-label">MIN SAFETY</div>
           <div class="sp-pills" id="sp-safety-pills">
             <button class="sp-pill on" data-safety="0">ANY</button>
             <button class="sp-pill" data-safety="3">3+</button>
@@ -91,24 +95,15 @@
           <div class="sp-pills" id="sp-tag-pills"></div>
         </div>
       </div>
-      <div id="sp-results-wrap">
-        <div id="sp-results"></div>
-      </div>
+      <div id="sp-results"></div>
     </div>
-  </div>
-
-  <!-- MAP -->
-  <div id="map-wrap">
-    <div id="map"></div>
 
     <!-- WELCOME OVERLAY -->
     <div id="welcome-overlay" class="hidden">
       <div id="welcome-box">
         <div id="welcome-ticker">
-          <span class="wt-dot"></span>
-          <span class="wt-dot"></span>
-          <span class="wt-dot"></span>
-          <span id="welcome-spots-count"></span> SPOTS LIVE
+          <div class="wt-dot"></div><div class="wt-dot"></div><div class="wt-dot"></div>
+          LIVE · <span id="welcome-spots-count">0</span> SPOTS MAPPED
         </div>
         <div id="welcome-headline">NGMI?<br>sleep first.</div>
         <div id="welcome-sub">A global map of sleeping spots<br>for degens, drifters and the down bad.</div>
@@ -280,11 +275,23 @@
         <label class="fl">Tags (comma-separated)</label>
         <input class="fi" id="f-tags" placeholder="wifi, no-police, scenic, rain-proof">
       </div>
-      <div class="frow">
-        <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng" type="number" placeholder="2.35" step="0.0001"></div>
-        <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
+
+      <!-- MAP PICKER -->
+      <input type="hidden" id="f-lat">
+      <input type="hidden" id="f-lng">
+      <div id="f-picker-wrap">
+        <button type="button" id="f-picker-toggle" onclick="togglePicker()">📍 Pick location on map</button>
+        <div id="f-picker-map-wrap">
+          <div id="f-picker-map"></div>
+          <div id="f-picker-coords"></div>
+          <span id="f-picker-manual" onclick="toggleManual()">enter coordinates manually</span>
+        </div>
+        <div id="f-manual-row" class="frow">
+          <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat-manual" type="number" placeholder="48.85" step="0.0001" oninput="syncManual()"></div>
+          <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng-manual" type="number" placeholder="2.35" step="0.0001" oninput="syncManual()"></div>
+        </div>
       </div>
-      <div class="fhint" style="margin-bottom:12px">Google Maps → right click → first line = coordinates</div>
+
       <div class="fg">
         <label class="fl">Photo <span style="color:var(--red)">*required</span></label>
         <label class="f-photo-wrap" id="f-photo-wrap">

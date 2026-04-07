@@ -503,16 +503,25 @@ function openMobDetail(p) {
       <div class="d-tags">${p.tags.map(t => `<div class="d-tag">#${esc(t)}</div>`).join('')}</div>
     </div>
     <div class="d-vote-row">
-      <button id="mob-vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
-      <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
+      <button id="mob-vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'▲ VOTED':'▲ VOTE'}</button>
+      <div id="mob-vote-count"><b>${p.votes}</b> <span>votes</span></div>
     </div>
     <div class="d-share-row">
-      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">𝕏 SHARE ON X</button>
-      <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
+      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">𝕏 SHARE</button>
+      <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">COPY LINK</button>
+      <a class="d-share-sub" href="place.html?id=${esc(p.id)}" style="text-decoration:none">PAGE →</a>
     </div>
   `;
+
   document.getElementById('mob-detail').classList.add('show');
-  document.getElementById('mob-vote-btn').onclick = () => doVote(p.id);
+
+  // vote button
+  const voteBtn = document.getElementById('mob-vote-btn');
+  if (voteBtn) {
+    voteBtn.style.cssText = `background:none;border:1px solid ${col};color:${col};font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:8px 16px;cursor:pointer;transition:all .15s;`;
+    if (isVoted) voteBtn.style.cssText += `background:${col};color:#000;`;
+    voteBtn.onclick = () => vote(p.id);
+  }
 }
 
 function closeMobDetail() {
@@ -521,46 +530,61 @@ function closeMobDetail() {
 
 // ── DESKTOP DETAIL ──
 function renderDetail(p) {
-  document.getElementById('right-empty').style.display = 'none';
-  const d = document.getElementById('right-detail');
-  d.classList.add('show');
   const col = tcol(p.type);
   const isVoted = voted.has(p.id);
   const dots = (n, c) => Array(5).fill(0).map((_,i) =>
     `<div style="width:8px;height:8px;border-radius:50%;background:${i<n?c:'#2a2a2a'}"></div>`
   ).join('');
-
+  const rightEmpty = document.getElementById('right-empty');
+  const d = document.getElementById('right-detail');
+  rightEmpty.style.display = 'none';
+  d.classList.add('show');
   d.innerHTML = `
-    <button class="d-close" onclick="desel()">✕ CLOSE</button>
+    <button class="d-close" onclick="desel()">← BACK</button>
     <div class="d-badge" style="color:${col}">${p.type.toUpperCase()}</div>
     <div class="d-name">${p.gold ? '★ ' : ''}${esc(p.name)}</div>
     <div class="d-city">${esc(p.city)}</div>
-    <div class="d-sec"><div class="d-lbl">Field Report</div><div class="d-txt">${esc(p.desc)}</div></div>
+    <div class="d-sec">
+      <div class="d-lbl">Field Report</div>
+      <div class="d-txt">${esc(p.desc)}</div>
+    </div>
     <div class="d-sec">
       <div class="d-lbl">Safety</div>
-      <div class="d-srow"><div style="display:flex;gap:4px">${dots(p.safety,col)}</div><div class="d-slbl">${safe_lbl[p.safety]}</div></div>
+      <div class="d-srow">
+        <div style="display:flex;gap:4px">${dots(p.safety, col)}</div>
+        <div class="d-slbl">${safe_lbl[p.safety]}</div>
+      </div>
     </div>
-    <div class="d-sec"><div class="d-lbl">Tags</div><div class="d-tags">${p.tags.map(t=>`<div class="d-tag">#${esc(t)}</div>`).join('')}</div></div>
+    <div class="d-sec">
+      <div class="d-lbl">Tags</div>
+      <div class="d-tags">${p.tags.map(t => `<div class="d-tag">#${esc(t)}</div>`).join('')}</div>
+    </div>
     <div class="d-vote-row">
-      <button id="vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
-      <div id="vote-count">${p.votes} <span>degens survived here</span></div>
+      <button id="vote-btn" class="${isVoted?'voted':''}" onclick="vote('${esc(p.id)}')">${isVoted?'▲ VOTED':'▲ VOTE'}</button>
+      <div id="vote-count"><b>${p.votes}</b> <span>votes</span></div>
     </div>
     <div class="d-share-row">
-      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">𝕏 SHARE ON X</button>
-      <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
+      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">𝕏 SHARE</button>
+      <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">COPY</button>
+      <a class="d-share-sub" href="place.html?id=${esc(p.id)}" style="text-decoration:none">PAGE →</a>
     </div>
   `;
-  document.getElementById('vote-btn').onclick = () => doVote(p.id);
 }
 
-async function doVote(id) {
+// ── VOTE ──
+async function vote(id) {
   if (voted.has(id)) { toast('ser you already voted'); return; }
+  voted.add(id);
+
   const { error } = await sb.from('place_votes').insert({ place_id: id, anon_id: ANON_ID });
-  if (error) { toast(error.code === '23505' ? 'ser you already voted' : 'error voting'); return; }
+  if (error) {
+    voted.delete(id);
+    toast(error.code === '23505' ? 'ser you already voted' : 'error voting');
+    return;
+  }
   const p = PLACES.find(x => x.id === id);
   if (!p) return;
   p.votes++;
-  voted.add(id);
   if (isMobile()) openMobDetail(p);
   else renderDetail(p);
   renderList();
@@ -929,14 +953,112 @@ function openModal() {
     openAuthModal();
     return;
   }
-  // auth user: открываем форму, но submit заблокирован до step 3
   document.getElementById('modal-bg').classList.add('open');
 }
-function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+  // reset picker
+  document.getElementById('f-picker-map-wrap').classList.remove('open');
+  const btn = document.getElementById('f-picker-toggle');
+  btn.classList.remove('active');
+  btn.textContent = '📍 Pick location on map';
+  document.getElementById('f-picker-coords').textContent = '';
+  document.getElementById('f-manual-row').classList.remove('open');
+  document.getElementById('f-lat').value = '';
+  document.getElementById('f-lng').value = '';
+  document.getElementById('f-lat-manual').value = '';
+  document.getElementById('f-lng-manual').value = '';
+  if (pickerMarker) { pickerMarker.remove(); pickerMarker = null; }
+}
+
 function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
+
 function setSafety(n) {
   safety = n;
   document.querySelectorAll('.sopt').forEach((el,i) => el.classList.toggle('on', i+1===n));
+}
+
+// ── MAP PICKER ──
+let pickerMap = null;
+let pickerMarker = null;
+
+function togglePicker() {
+  const wrap = document.getElementById('f-picker-map-wrap');
+  const btn  = document.getElementById('f-picker-toggle');
+  const open = wrap.classList.toggle('open');
+  btn.classList.toggle('active', open);
+  if (open) {
+    if (!pickerMap) {
+      initPickerMap();
+    } else {
+      setTimeout(() => pickerMap.resize(), 50);
+    }
+  }
+}
+
+function initPickerMap() {
+  pickerMap = new mapboxgl.Map({
+    container: 'f-picker-map',
+    style: 'mapbox://styles/mapbox/dark-v11',
+    center: [0, 20],
+    zoom: 1.5,
+    attributionControl: false
+  });
+  pickerMap.on('load', () => pickerMap.resize());
+  pickerMap.on('click', e => {
+    const { lng, lat } = e.lngLat;
+    setPickerCoords(lat, lng);
+  });
+}
+
+function setPickerCoords(lat, lng) {
+  document.getElementById('f-lat').value = lat.toFixed(5);
+  document.getElementById('f-lng').value = lng.toFixed(5);
+  const label = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  document.getElementById('f-picker-coords').textContent = label;
+  document.getElementById('f-picker-toggle').textContent = label;
+  document.getElementById('f-picker-toggle').classList.add('active');
+  if (pickerMarker) pickerMarker.remove();
+  const el = document.createElement('div');
+  el.style.cssText = 'width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px rgba(200,169,110,.35);';
+  pickerMarker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+    .setLngLat([lng, lat])
+    .addTo(pickerMap);
+}
+
+function toggleManual() {
+  document.getElementById('f-manual-row').classList.toggle('open');
+}
+
+function syncManual() {
+  const lat = parseFloat(document.getElementById('f-lat-manual').value);
+  const lng = parseFloat(document.getElementById('f-lng-manual').value);
+  if (isNaN(lat) || isNaN(lng)) return;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
+  const mapWrap = document.getElementById('f-picker-map-wrap');
+  const pickerBtn = document.getElementById('f-picker-toggle');
+
+  if (pickerMap) {
+    if (!mapWrap.classList.contains('open')) {
+      mapWrap.classList.add('open');
+      pickerBtn.classList.add('active');
+      setTimeout(() => {
+        pickerMap.resize();
+        setPickerCoords(lat, lng);
+        pickerMap.flyTo({ center: [lng, lat], zoom: 10 });
+      }, 50);
+    } else {
+      setPickerCoords(lat, lng);
+      pickerMap.flyTo({ center: [lng, lat], zoom: 10 });
+    }
+  } else {
+    // picker not yet init — просто записываем в hidden fields
+    document.getElementById('f-lat').value = lat;
+    document.getElementById('f-lng').value = lng;
+    document.getElementById('f-picker-coords').textContent = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }
 }
 
 function onPhotoChange(input) {
@@ -951,7 +1073,7 @@ function onPhotoChange(input) {
   }
 }
 
-// ── SUBMIT PLACE (step 3) ──
+// ── SUBMIT PLACE ──
 async function submitPlace() {
   if (!currentUser) { openAuthModal(); return; }
 
@@ -966,7 +1088,7 @@ async function submitPlace() {
   const file    = fileInput?.files?.[0];
 
   if (!name || !city || !desc)              { toast('ser — fill name, city and description'); return; }
-  if (isNaN(lat) || isNaN(lng))             { toast('ser — add coordinates'); return; }
+  if (isNaN(lat) || isNaN(lng))             { toast('ser — pick a location on the map'); return; }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
   if (!file)                                { toast('ser — attach at least 1 photo'); return; }
   if (file.size > 5 * 1024 * 1024)         { toast('photo too large — max 5MB'); return; }
@@ -1008,12 +1130,13 @@ async function submitPlace() {
   toast('📍 Spot submitted! Under review — WAGMI fren 🛌', 4000);
 
   // reset form
-  ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => {
+  ['f-name','f-city','f-desc','f-tags'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('f-type').value = 'rooftop';
   if (fileInput) fileInput.value = '';
   document.getElementById('f-photo-label').textContent = 'Choose photo';
+  document.getElementById('f-photo-wrap').classList.remove('has-file');
   setSafety(3);
   sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
 }
