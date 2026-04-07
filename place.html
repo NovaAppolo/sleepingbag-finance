@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SleepingBag.finance</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --panel: #0f0f0f;
+  --gold: #c8a96e;
+  --gold-dim: rgba(200,169,110,0.12);
+  --green: #4a9e6a;
+  --red: #e84040;
+  --text: #e8e0d0;
+  --text-dim: #666;
+  --border: #1e1e1e;
+  --border2: #2a2a2a;
+}
+
+html, body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+}
+
+/* ── HEADER ── */
+#header {
+  height: 52px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 14px;
+}
+
+#logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--gold);
+  letter-spacing: -0.5px;
+  text-decoration: none;
+}
+#logo span { color: #444; font-weight: 400; }
+
+#back-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 14px;
+  height: 34px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  transition: all .15s;
+}
+#back-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── LOADING / ERROR STATES ── */
+.state-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 52px);
+  text-align: center;
+  padding: 40px 20px;
+  gap: 14px;
+}
+.state-icon { font-size: 42px; }
+.state-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+}
+.state-text { font-size: 12px; color: var(--text-dim); line-height: 1.8; }
+.state-link {
+  display: inline-block;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 11px 24px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.state-link:hover { opacity: .85; }
+
+/* ── PLACE CARD ── */
+#place-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+/* Photo */
+#place-photo {
+  width: 100%;
+  height: 280px;
+  background: #111;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+
+/* Meta row */
+#place-type {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+#place-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+#place-city {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+
+/* Safety */
+.section {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+}
+.section-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.safety-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.safety-dots { display: flex; gap: 4px; }
+.sd {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border2);
+}
+.sd.on { background: var(--green); }
+.safety-lbl { font-size: 11px; color: var(--text-dim); }
+
+/* Description */
+#place-desc {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+/* Tags */
+#place-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  letter-spacing: .5px;
+}
+
+/* Actions */
+.actions {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#btn-map {
+  display: block;
+  width: 100%;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 14px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-align: center;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+#btn-map:hover { opacity: .85; }
+
+#btn-share {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 14px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all .15s;
+}
+#btn-share:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Share fallback */
+#share-fallback {
+  display: none;
+  gap: 8px;
+}
+#share-fallback.show { display: flex; }
+
+.share-sub-btn {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 10px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .15s;
+  text-align: center;
+}
+.share-sub-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Toast */
+#toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  color: var(--text);
+  padding: 10px 20px;
+  font-size: 12px;
+  z-index: 400;
+  opacity: 0;
+  transition: all .22s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+@media (max-width: 600px) {
+  #place-photo { height: 220px; }
+  #place-name { font-size: 22px; }
+  #place-wrap { padding: 20px 16px 80px; }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <a href="/" id="logo">SleepingBag<span>.finance</span></a>
+  <a href="/" id="back-btn">← OPEN ATLAS</a>
+</div>
+
+<!-- Loading -->
+<div id="state-loading" class="state-screen">
+  <div class="state-icon">🛌</div>
+  <div class="state-title">Loading spot...</div>
+</div>
+
+<!-- Not found -->
+<div id="state-notfound" class="state-screen" style="display:none">
+  <div class="state-icon">🚫</div>
+  <div class="state-title">Spot not found</div>
+  <div class="state-text">This spot doesn't exist, is pending review, or has been removed.</div>
+  <a href="/" class="state-link">BROWSE THE ATLAS</a>
+</div>
+
+<!-- Place card -->
+<div id="place-wrap" style="display:none">
+  <div id="place-photo"></div>
+  <div id="place-type"></div>
+  <div id="place-name"></div>
+  <div id="place-city"></div>
+
+  <div class="section">
+    <div class="section-lbl">Safety</div>
+    <div class="safety-row">
+      <div class="safety-dots" id="place-safety-dots"></div>
+      <div class="safety-lbl" id="place-safety-lbl"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-lbl">Field Report</div>
+    <div id="place-desc"></div>
+  </div>
+
+  <div class="section" id="tags-section" style="display:none">
+    <div class="section-lbl">Tags</div>
+    <div id="place-tags"></div>
+  </div>
+
+  <div class="section actions">
+    <a id="btn-map" href="/">🗺 OPEN ON MAP</a>
+    <button id="btn-share" onclick="handleShare()">📤 SHARE THIS SPOT</button>
+    <div id="share-fallback">
+      <button class="share-sub-btn" onclick="shareToX()">Share on X</button>
+      <button class="share-sub-btn" onclick="copyLink()">Copy Link</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="place.js"></script>
+</body>
+</html>
