@@ -7,11 +7,11 @@ const sb = supabase.createClient(
 const SAFE_LABELS = ['', 'extremely rekt', 'risky ser', 'degen approved', 'comfy homeless', 'ultra safe (tokyo tier)'];
 const TYPE_COLORS = { rooftop: '#c8a96e', beach: '#4a9e6a', park: '#4a9e6a', forest: '#4a9e6a', bridge: '#e84040', other: '#888' };
 
-// Share templates — rotate per click
+// Share templates — text only, no URL (goes in &url= param separately)
 const SHARE_TEMPLATES = [
-  (name, city, url) => `NGMI shelter spotted in ${city}: ${name} 🛌 ${url}`,
-  (name, city, url) => `${name} in ${city} — mapped on SleepingBag.finance 🛌 ${url}`,
-  (name, city, url) => `A sleeping spot in ${city}: ${name} 🛌 ${url}`,
+  (name, city) => `NGMI shelter spotted in ${city}: ${name} 🛌`,
+  (name, city) => `${name} in ${city} — mapped on SleepingBag.finance 🛌`,
+  (name, city) => `A sleeping spot in ${city}: ${name} 🛌`,
 ];
 let shareTemplateIdx = 0;
 
@@ -105,55 +105,31 @@ function buildShareText(p) {
   shareTemplateIdx++;
   const name = p.name || 'Sleeping spot';
   const city = p.city || null;
-  const url  = getPlaceURL();
-  if (!city) {
-    return `${name} — mapped on SleepingBag.finance 🛌 ${url}`;
-  }
-  return fn(name, city, url);
+  if (!city) return `${name} — mapped on SleepingBag.finance 🛌`;
+  return fn(name, city);
 }
 
 let currentPlace = null;
-let pendingShareText = null; // frozen for current share action
 
-async function handleShare() {
+function shareOnX() {
   if (!currentPlace) return;
-  pendingShareText = buildShareText(currentPlace); // freeze once per action
-
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: currentPlace.name,
-        text: pendingShareText,
-        url: getPlaceURL(),
-      });
-      return;
-    } catch (e) {
-      if (e.name === 'AbortError') return;
-    }
-  }
-
-  document.getElementById('share-fallback').classList.add('show');
-}
-
-function shareToX() {
-  if (!currentPlace) return;
-  const text = pendingShareText || buildShareText(currentPlace);
-  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(tweetUrl, '_blank', 'noopener,noreferrer');
+  const text = buildShareText(currentPlace);
+  const url  = getPlaceURL();
+  window.open(
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+    '_blank', 'noopener,noreferrer'
+  );
 }
 
 function copyLink() {
   const url = getPlaceURL();
-  navigator.clipboard.writeText(url).then(() => {
-    toast('Link copied 🛌');
-  }).catch(() => {
-    // fallback for browsers without clipboard API
-    const input = document.createElement('input');
-    input.value = url;
-    document.body.appendChild(input);
-    input.select();
+  navigator.clipboard.writeText(url).then(() => toast('Link copied 🛌')).catch(() => {
+    const el = document.createElement('input');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
     document.execCommand('copy');
-    document.body.removeChild(input);
+    document.body.removeChild(el);
     toast('Link copied 🛌');
   });
 }

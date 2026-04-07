@@ -220,10 +220,9 @@ html, body {
 
 #btn-share {
   display: block;
-  width: 100%;
-  background: none;
-  border: 1px solid var(--border2);
-  color: var(--text-dim);
+  background: #000;
+  border: 1px solid var(--text);
+  color: var(--text);
   font-family: 'Space Mono', monospace;
   font-weight: 700;
   font-size: 12px;
@@ -234,28 +233,20 @@ html, body {
 }
 #btn-share:hover { border-color: var(--gold); color: var(--gold); }
 
-/* Share fallback */
-#share-fallback {
-  display: none;
-  gap: 8px;
-}
-#share-fallback.show { display: flex; }
-
-.share-sub-btn {
-  flex: 1;
+#btn-copy {
+  display: block;
   background: none;
   border: 1px solid var(--border2);
   color: var(--text-dim);
   font-family: 'Space Mono', monospace;
   font-weight: 700;
-  font-size: 10px;
-  padding: 10px;
+  font-size: 11px;
+  padding: 14px;
   cursor: pointer;
-  letter-spacing: .5px;
+  letter-spacing: 1px;
   transition: all .15s;
-  text-align: center;
 }
-.share-sub-btn:hover { border-color: var(--gold); color: var(--gold); }
+#btn-copy:hover { border-color: var(--gold); color: var(--gold); }
 
 /* Toast */
 #toast {
@@ -331,10 +322,9 @@ html, body {
 
   <div class="section actions">
     <a id="btn-map" href="/">🗺 OPEN ON MAP</a>
-    <button id="btn-share" onclick="handleShare()">📤 SHARE THIS SPOT</button>
-    <div id="share-fallback">
-      <button class="share-sub-btn" onclick="shareToX()">Share on X</button>
-      <button class="share-sub-btn" onclick="copyLink()">Copy Link</button>
+    <div style="display:flex;gap:8px">
+      <button id="btn-share" onclick="shareOnX()" style="flex:2">𝕏 SHARE ON X</button>
+      <button id="btn-copy" onclick="copyLink()" style="flex:1">COPY LINK</button>
     </div>
   </div>
 </div>

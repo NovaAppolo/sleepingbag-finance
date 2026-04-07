@@ -488,11 +488,8 @@ function openMobDetail(p) {
       <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
     <div class="d-share-row">
-      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">📤 SHARE</button>
-      <div id="share-fallback-${esc(p.id)}" style="display:none;gap:6px;flex:1">
-        <button class="d-share-sub" onclick="shareToXMain(PLACES.find(x=>x.id==='${esc(p.id)}'))">X</button>
-        <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
-      </div>
+      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">𝕏 SHARE ON X</button>
+      <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
     </div>
   `;
   document.getElementById('mob-detail').classList.add('show');
@@ -530,11 +527,8 @@ function renderDetail(p) {
       <div id="vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
     <div class="d-share-row">
-      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">📤 SHARE</button>
-      <div id="share-fallback-${esc(p.id)}" style="display:none;gap:6px;flex:1">
-        <button class="d-share-sub" onclick="shareToXMain(PLACES.find(x=>x.id==='${esc(p.id)}'))">X</button>
-        <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
-      </div>
+      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">𝕏 SHARE ON X</button>
+      <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
     </div>
   `;
   document.getElementById('vote-btn').onclick = () => doVote(p.id);
@@ -826,42 +820,29 @@ async function submitPlace() {
 
 // ── SHARE ──
 const SHARE_TEMPLATES_MAIN = [
-  (name, city, url) => `NGMI shelter spotted in ${city}: ${name} 🛌 ${url}`,
-  (name, city, url) => `${name} in ${city} — mapped on SleepingBag.finance 🛌 ${url}`,
-  (name, city, url) => `A sleeping spot in ${city}: ${name} 🛌 ${url}`,
+  (name, city) => `NGMI shelter spotted in ${city}: ${name} 🛌`,
+  (name, city) => `${name} in ${city} — mapped on SleepingBag.finance 🛌`,
+  (name, city) => `A sleeping spot in ${city}: ${name} 🛌`,
 ];
 let shareIdxMain = 0;
-let pendingShareTextMain = null;
 
 function buildShareTextMain(p) {
   const fn = SHARE_TEMPLATES_MAIN[shareIdxMain % SHARE_TEMPLATES_MAIN.length];
   shareIdxMain++;
   const name = p.name || 'Sleeping spot';
   const city = p.city || null;
+  if (!city) return `${name} — mapped on SleepingBag.finance 🛌`;
+  return fn(name, city);
+}
+
+function sharePlace(p) {
+  if (!p) return;
+  const text = buildShareTextMain(p);
   const url  = `${location.origin}/place.html?id=${p.id}`;
-  if (!city) return `${name} — mapped on SleepingBag.finance 🛌 ${url}`;
-  return fn(name, city, url);
-}
-
-async function sharePlace(p) {
-  const url = `${location.origin}/place.html?id=${p.id}`;
-  pendingShareTextMain = buildShareTextMain(p);
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: p.name || 'Sleeping spot', text: pendingShareTextMain, url });
-      return;
-    } catch (e) {
-      if (e.name === 'AbortError') return;
-    }
-  }
-  // fallback — показываем inline кнопки
-  const fb = document.getElementById('share-fallback-' + p.id);
-  if (fb) fb.style.display = 'flex';
-}
-
-function shareToXMain(p) {
-  const text = pendingShareTextMain || buildShareTextMain(p);
-  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  window.open(
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+    '_blank', 'noopener,noreferrer'
+  );
 }
 
 function copyLinkMain(id) {
