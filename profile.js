@@ -34,7 +34,7 @@ async function init() {
 
   if (!currentUser) { showNoAuth(); return; }
   showProfile();
-  await Promise.all([loadProfile(), loadSpots(), loadComments()]);
+  await Promise.all([loadProfile(), loadSaved(), loadSpots(), loadComments()]);
 }
 
 function showNoAuth() {
@@ -116,6 +116,40 @@ async function saveProfile() {
   renderIdentity();
   toggleEditForm();
   toast('profile saved \u2713');
+}
+
+async function loadSaved() {
+  const { data, error } = await sb
+    .from('saved_places')
+    .select('place_id, created_at, places(id, name, city, type, status)')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  const body    = document.getElementById('p-saved-body');
+  const countEl = document.getElementById('p-saved-count');
+
+  if (error || !data) { body.innerHTML = '<div class="p-empty">could not load saved places</div>'; return; }
+
+  const valid = data.filter(r => r.places); // скрываем если место удалено
+  countEl.textContent = valid.length ? valid.length + ' total' : '';
+
+  if (!valid.length) {
+    body.innerHTML = '<div class="p-empty">no saved spots yet \u2014 explore the map</div>';
+    return;
+  }
+
+  body.innerHTML = valid.map(r => {
+    const p           = r.places;
+    const date        = new Date(r.created_at).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+    const unavailable = p.status !== 'approved';
+    return `<div class="p-spot-item">
+      <div>
+        <div class="p-spot-name">${unavailable?'<span style="color:var(--text-dim)">[unavailable]</span> ':''}${esc(p.name)}</div>
+        <div class="p-spot-meta">${esc(p.city)} \u00b7 ${esc(p.type)} \u00b7 saved ${date}</div>
+      </div>
+      ${!unavailable?`<a href="/?spot=${esc(p.id)}" class="p-spot-link">VIEW \u2192</a>`:''}
+    </div>`;
+  }).join('');
 }
 
 async function loadSpots() {
