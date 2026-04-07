@@ -247,6 +247,42 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #vote-count { font-size: 14px; font-weight: 700; }
 #vote-count span { font-size: 10px; color: var(--text-dim); font-weight: 400; }
 
+.d-share-row {
+  padding: 10px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.d-share-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.d-share-btn:hover { border-color: var(--gold); color: var(--gold); }
+.d-share-sub {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 7px 10px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .15s;
+  text-align: center;
+}
+.d-share-sub:hover { border-color: var(--gold); color: var(--gold); }
+
 /* ══════════════════════════════
    MOBILE BOTTOM DRAWER
 ══════════════════════════════ */
@@ -696,9 +732,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-decoration: none;
 }
-.auth-ind-label:hover { color: var(--gold); }
 .auth-ind-out {
   background: none;
   border: none;
@@ -756,179 +790,3 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   background-repeat: no-repeat;
   flex-shrink: 0;
 }
-
-/* dup warning */
-.f-dup-warning {
-  display: none;
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: rgba(232,64,64,0.07);
-  border: 1px solid rgba(232,64,64,0.25);
-  font-size: 10px;
-  color: var(--text-dim);
-  line-height: 1.6;
-}
-.f-dup-warning.show { display: block; }
-.f-dup-warning b { color: var(--text); }
-
-/* mini map picker */
-#f-minimap {
-  width: 100%;
-  height: 180px;
-  background: #111;
-  border: 1px solid var(--border2);
-  position: relative;
-  display: none;
-}
-#f-minimap.show { display: block; }
-#f-minimap-map { width: 100%; height: 100%; }
-.minimap-cross {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  color: var(--gold);
-  font-size: 20px;
-  line-height: 1;
-  text-shadow: 0 0 4px #000;
-}
-
-/* photo preview */
-#f-photo-preview {
-  display: none;
-  margin-top: 8px;
-  width: 100%;
-  max-height: 160px;
-  overflow: hidden;
-}
-#f-photo-preview.show { display: block; }
-#f-photo-preview img {
-  width: 100%;
-  max-height: 160px;
-  object-fit: cover;
-  display: block;
-}
-
-/* pending banner */
-#pending-banner {
-  display: none;
-  background: rgba(200,169,110,0.08);
-  border: 1px solid rgba(200,169,110,0.3);
-  padding: 10px 14px;
-  font-size: 11px;
-  color: var(--gold);
-  line-height: 1.6;
-  margin-bottom: 12px;
-}
-#pending-banner.show { display: block; }
-
-/* chat cooldown */
-#chat-send:disabled { opacity: .4; cursor: not-allowed; }
-
-/* ── SAVE BUTTON ── */
-.save-btn {
-  background: none;
-  border: 1px solid var(--border2);
-  color: var(--text-dim);
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
-  font-size: 10px;
-  padding: 6px 12px;
-  cursor: pointer;
-  letter-spacing: .5px;
-  transition: all .15s;
-  margin-left: auto;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.save-btn:hover { border-color: var(--gold); color: var(--gold); }
-.save-btn.saved { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
-
-.visited-btn {
-  background: none;
-  border: 1px solid var(--border2);
-  color: var(--text-dim);
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
-  font-size: 10px;
-  padding: 6px 12px;
-  cursor: pointer;
-  letter-spacing: .5px;
-  transition: all .15s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.visited-btn:hover { border-color: var(--green); color: var(--green); }
-.visited-btn.visited { border-color: var(--green); color: var(--green); background: rgba(74,158,106,.1); }
-
-/* mobile action row — SAVE + VISITED под vote-row */
-.d-action-row {
-  display: flex;
-  gap: 8px;
-  padding: 10px 0 0;
-}
-.d-action-row .save-btn,
-.d-action-row .visited-btn {
-  flex: 1;
-  text-align: center;
-  padding: 10px 8px;
-  font-size: 10px;
-}
-
-/* ── COMMENTS ── */
-.d-comments-sec { padding-bottom: 8px; }
-.d-comments-count { color: var(--text-dim); font-weight: 400; font-size: 9px; margin-left: 4px; }
-
-.comments-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
-.comments-loading, .comments-empty { font-size: 11px; color: var(--text-dim); padding: 4px 0; }
-
-.comment-item { border-left: 2px solid var(--border2); padding-left: 10px; }
-.comment-meta { display: flex; gap: 8px; align-items: baseline; margin-bottom: 3px; }
-.comment-author { font-size: 10px; font-weight: 700; color: var(--gold); }
-.comment-time { font-size: 9px; color: var(--text-dim); }
-.comment-text { font-size: 11px; color: var(--text); line-height: 1.5; }
-
-.comments-form { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
-.comment-input {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border2);
-  color: var(--text);
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  padding: 8px 10px;
-  resize: none;
-  height: 70px;
-  outline: none;
-  transition: border-color .15s;
-}
-.comment-input:focus { border-color: var(--gold); }
-.comment-form-row { display: flex; align-items: center; justify-content: space-between; }
-.comment-chars { font-size: 9px; color: var(--text-dim); }
-.comment-submit {
-  background: none;
-  border: 1px solid var(--gold);
-  color: var(--gold);
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
-  font-size: 10px;
-  padding: 5px 14px;
-  cursor: pointer;
-  transition: all .15s;
-  letter-spacing: .5px;
-}
-.comment-submit:hover { background: var(--gold-dim); }
-.comment-submit:disabled { opacity: .4; cursor: not-allowed; }
-
-.comments-auth-note { margin-top: 10px; }
-.comments-auth-note button {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}
-.comments-auth-note button:hover { color: var(--gold); }

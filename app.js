@@ -157,8 +157,7 @@ async function initAuth() {
     currentUser = session?.user ?? null;
     updateAuthUI();
     updateWalletBtn();
-    if (currentUser) { closeAuthModal(); loadSaved(); loadVisited(); }
-    else { saved.clear(); visited.clear(); }
+    if (currentUser) closeAuthModal();
   });
 }
 
@@ -175,7 +174,7 @@ function updateAuthUI() {
         : 'anon';
     const inner =
       '<span class="auth-ind-dot on"></span>' +
-      '<a class="auth-ind-label" href="/profile.html">' + esc(label) + '</a>' +
+      '<span class="auth-ind-label">' + esc(label) + '</span>' +
       '<button class="auth-ind-out" onclick="signOut()">sign out</button>';
     if (indicator) { indicator.innerHTML = inner; indicator.classList.add('visible'); }
     if (mobRow) { mobRow.innerHTML = inner; mobRow.classList.add('visible'); }
@@ -312,8 +311,6 @@ let markers = {};
 let popupPlaceId = null;
 let drawerExpanded = false;
 let chatOpen = false;
-let saved = new Set();   // place ids сохранённых мест
-let visited = new Set(); // place ids посещённых мест
 const isMobile = () => window.innerWidth <= 768;
 
 const tcol = t => ({ rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[t] || '#888');
@@ -342,17 +339,6 @@ map.on('load', async () => {
     }));
   }
   buildMarkers(); renderList(); updateStats(); initChat();
-  if (currentUser) { loadSaved(); loadVisited(); initPendingBanner(); }
-  // deep link: /?spot=UUID
-  const spotParam = new URLSearchParams(window.location.search).get('spot');
-  if (spotParam) {
-    const p = PLACES.find(x => x.id === spotParam);
-    if (p) {
-      map.flyTo({ center: [p.lng, p.lat], zoom: 12, duration: 800, essential: true });
-      if (isMobile()) setTimeout(() => openMobDetail(p), 900);
-      else setTimeout(() => sel(p.id, false), 900);
-    }
-  }
 });
 map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
 
@@ -501,36 +487,16 @@ function openMobDetail(p) {
       <button id="mob-vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="mob-vote-count">${p.votes} <span>degens survived here</span></div>
     </div>
-    ${currentUser ? `
-    <div class="d-action-row">
-      <button id="mob-save-btn" class="save-btn${saved.has(p.id)?' saved':''}">${saved.has(p.id)?'★ SAVED':'☆ SAVE'}</button>
-      <button id="mob-visited-btn" class="visited-btn${visited.has(p.id)?' visited':''}">${visited.has(p.id)?'✓ VISITED':'✦ MARK VISITED'}</button>
-    </div>` : ''}
-    <div class="d-sec d-comments-sec">
-      <div class="d-lbl">Comments <span id="mob-comments-count" class="d-comments-count"></span></div>
-      <div id="mob-comments-list" class="comments-list"></div>
-      <div id="mob-comments-form" class="comments-form" style="display:none">
-        <textarea id="mob-comment-input" class="comment-input" placeholder="share your field report..." maxlength="500"></textarea>
-        <div class="comment-form-row">
-          <span id="mob-comment-chars" class="comment-chars">500</span>
-          <button id="mob-comment-submit" class="comment-submit" onclick="submitComment('${esc(p.id)}','mob')">POST</button>
-        </div>
-      </div>
-      <div id="mob-comments-auth" class="comments-auth-note" style="display:none">
-        <button onclick="openAuthModal()">Sign in to comment</button>
+    <div class="d-share-row">
+      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">📤 SHARE</button>
+      <div id="share-fallback-${esc(p.id)}" style="display:none;gap:6px;flex:1">
+        <button class="d-share-sub" onclick="shareToXMain(PLACES.find(x=>x.id==='${esc(p.id)}'))">X</button>
+        <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
       </div>
     </div>
   `;
   document.getElementById('mob-detail').classList.add('show');
   document.getElementById('mob-vote-btn').onclick = () => doVote(p.id);
-  document.getElementById('mob-save-btn')?.addEventListener('click', () => toggleSaved(p.id, 'mob'));
-  document.getElementById('mob-visited-btn')?.addEventListener('click', () => toggleVisited(p.id, 'mob'));
-  const mobInput = document.getElementById('mob-comment-input');
-  if (mobInput) mobInput.oninput = () => {
-    const el = document.getElementById('mob-comment-chars');
-    if (el) el.textContent = 500 - mobInput.value.length;
-  };
-  loadComments(p.id, 'mob');
 }
 
 function closeMobDetail() {
@@ -562,35 +528,16 @@ function renderDetail(p) {
     <div class="d-vote-row">
       <button id="vote-btn" class="${isVoted?'voted':''}" data-id="${esc(p.id)}">${isVoted?'✓ VOTED':'▲ VOTE'}</button>
       <div id="vote-count">${p.votes} <span>degens survived here</span></div>
-      ${currentUser ? `
-        <button id="save-btn" class="save-btn${saved.has(p.id)?' saved':''}">${saved.has(p.id)?'★ SAVED':'☆ SAVE'}</button>
-        <button id="visited-btn" class="visited-btn${visited.has(p.id)?' visited':''}">${visited.has(p.id)?'✓ VISITED':'✦ VISITED'}</button>
-      ` : ''}
     </div>
-    <div class="d-sec d-comments-sec">
-      <div class="d-lbl">Comments <span id="desk-comments-count" class="d-comments-count"></span></div>
-      <div id="desk-comments-list" class="comments-list"></div>
-      <div id="desk-comments-form" class="comments-form" style="display:none">
-        <textarea id="desk-comment-input" class="comment-input" placeholder="share your field report..." maxlength="500"></textarea>
-        <div class="comment-form-row">
-          <span id="desk-comment-chars" class="comment-chars">500</span>
-          <button id="desk-comment-submit" class="comment-submit" onclick="submitComment('${esc(p.id)}','desk')">POST</button>
-        </div>
-      </div>
-      <div id="desk-comments-auth" class="comments-auth-note" style="display:none">
-        <button onclick="openAuthModal()">Sign in to comment</button>
+    <div class="d-share-row">
+      <button class="d-share-btn" onclick="sharePlace(PLACES.find(x=>x.id==='${esc(p.id)}'))">📤 SHARE</button>
+      <div id="share-fallback-${esc(p.id)}" style="display:none;gap:6px;flex:1">
+        <button class="d-share-sub" onclick="shareToXMain(PLACES.find(x=>x.id==='${esc(p.id)}'))">X</button>
+        <button class="d-share-sub" onclick="copyLinkMain('${esc(p.id)}')">Copy</button>
       </div>
     </div>
   `;
   document.getElementById('vote-btn').onclick = () => doVote(p.id);
-  document.getElementById('save-btn')?.addEventListener('click', () => toggleSaved(p.id, 'desk'));
-  document.getElementById('visited-btn')?.addEventListener('click', () => toggleVisited(p.id, 'desk'));
-  const deskInput = document.getElementById('desk-comment-input');
-  if (deskInput) deskInput.oninput = () => {
-    const el = document.getElementById('desk-comment-chars');
-    if (el) el.textContent = 500 - deskInput.value.length;
-  };
-  loadComments(p.id, 'desk');
 }
 
 async function doVote(id) {
@@ -766,7 +713,6 @@ function chatKeydown(e) {
 }
 
 async function sendChat() {
-  if (chatCooldown) return;
   const nameEl = document.getElementById('chat-name-input');
   const textEl = document.getElementById('chat-text-input');
   const text = textEl.value.trim();
@@ -775,19 +721,12 @@ async function sendChat() {
   const now = new Date();
   const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   textEl.value = '';
-  setChatCooldown(10000);
   const container = document.getElementById('chat-messages');
   const msgEl = buildMsgEl({ name, text, time });
   container.appendChild(msgEl);
   container.scrollTop = container.scrollHeight;
   const { error } = await sb.from('chat_messages').insert({ text, author_name: name, anon_id: ANON_ID });
-  if (error) {
-    msgEl.remove();
-    const msg = error.message?.includes('rate_limit_exceeded')
-      ? 'ser — too many messages, slow down'
-      : 'message not saved — check connection';
-    toast(msg);
-  }
+  if (error) { msgEl.remove(); toast('message not saved — check connection'); }
 }
 
 // ── MODAL (add spot — gated) ──
@@ -799,19 +738,7 @@ function openModal() {
   // auth user: открываем форму, но submit заблокирован до step 3
   document.getElementById('modal-bg').classList.add('open');
 }
-function closeModal() {
-  document.getElementById('modal-bg').classList.remove('open');
-  // minimap: proper destroy
-  if (minimapInstance) { try { minimapInstance.remove(); } catch(_) {} minimapInstance = null; minimapMarker = null; }
-  const minimap = document.getElementById('f-minimap');
-  if (minimap) { minimap.classList.remove('show'); minimap.innerHTML = ''; }
-  // coord paste
-  const coordPaste = document.getElementById('f-coord-paste');
-  if (coordPaste) coordPaste.value = '';
-  // photo preview
-  const preview = document.getElementById('f-photo-preview');
-  if (preview) { preview.innerHTML = ''; preview.classList.remove('show'); }
-}
+function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
 function closeBg(e) { if (e.target === document.getElementById('modal-bg')) closeModal(); }
 function setSafety(n) {
   safety = n;
@@ -821,21 +748,12 @@ function setSafety(n) {
 function onPhotoChange(input) {
   const label = document.getElementById('f-photo-label');
   const wrap  = document.getElementById('f-photo-wrap');
-  const preview = document.getElementById('f-photo-preview');
   if (input.files && input.files[0]) {
     label.textContent = input.files[0].name;
     wrap.classList.add('has-file');
-    const reader = new FileReader();
-    reader.onload = e => {
-      preview.innerHTML = `<img src="${e.target.result}" alt="preview">`;
-      preview.classList.add('show');
-    };
-    reader.readAsDataURL(input.files[0]);
   } else {
     label.textContent = 'Choose photo';
     wrap.classList.remove('has-file');
-    preview.innerHTML = '';
-    preview.classList.remove('show');
   }
 }
 
@@ -857,7 +775,6 @@ async function submitPlace() {
   if (isNaN(lat) || isNaN(lng))             { toast('ser — add coordinates'); return; }
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { toast('invalid coordinates'); return; }
   if (!file)                                { toast('ser — attach at least 1 photo'); return; }
-  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { toast('photo must be jpg, png or webp'); return; }
   if (file.size > 5 * 1024 * 1024)         { toast('photo too large — max 5MB'); return; }
 
   const sub = document.getElementById('fsub');
@@ -895,7 +812,6 @@ async function submitPlace() {
 
   closeModal();
   toast('📍 Spot submitted! Under review — WAGMI fren 🛌', 4000);
-  showPendingBanner();
 
   // reset form
   ['f-name','f-city','f-desc','f-tags','f-lat','f-lng'].forEach(id => {
@@ -904,291 +820,61 @@ async function submitPlace() {
   document.getElementById('f-type').value = 'rooftop';
   if (fileInput) fileInput.value = '';
   document.getElementById('f-photo-label').textContent = 'Choose photo';
-  const preview = document.getElementById('f-photo-preview');
-  if (preview) { preview.innerHTML = ''; preview.classList.remove('show'); }
-  const wrap = document.getElementById('f-photo-wrap');
-  if (wrap) wrap.classList.remove('has-file');
-  const coordPaste = document.getElementById('f-coord-paste');
-  if (coordPaste) coordPaste.value = '';
-  const minimap = document.getElementById('f-minimap');
-  if (minimap) {
-    if (minimapInstance) { try { minimapInstance.remove(); } catch(_) {} minimapInstance = null; }
-    minimap.classList.remove('show'); minimap.innerHTML = '';
-  }
   setSafety(3);
   sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
 }
 
-// ── SAVED ──
-async function loadSaved() {
-  if (!currentUser) return;
-  const { data } = await sb.from('saved_places').select('place_id').eq('user_id', currentUser.id);
-  saved.clear();
-  if (data) data.forEach(r => saved.add(r.place_id));
+// ── SHARE ──
+const SHARE_TEMPLATES_MAIN = [
+  (name, city, url) => `NGMI shelter spotted in ${city}: ${name} 🛌 ${url}`,
+  (name, city, url) => `${name} in ${city} — mapped on SleepingBag.finance 🛌 ${url}`,
+  (name, city, url) => `A sleeping spot in ${city}: ${name} 🛌 ${url}`,
+];
+let shareIdxMain = 0;
+let pendingShareTextMain = null;
+
+function buildShareTextMain(p) {
+  const fn = SHARE_TEMPLATES_MAIN[shareIdxMain % SHARE_TEMPLATES_MAIN.length];
+  shareIdxMain++;
+  const name = p.name || 'Sleeping spot';
+  const city = p.city || null;
+  const url  = `${location.origin}/place.html?id=${p.id}`;
+  if (!city) return `${name} — mapped on SleepingBag.finance 🛌 ${url}`;
+  return fn(name, city, url);
 }
 
-async function toggleSaved(placeId, ctx) {
-  if (!currentUser) { openAuthModal(); return; }
-  const isSaved = saved.has(placeId);
-  if (isSaved) {
-    const { error } = await sb.from('saved_places')
-      .delete().eq('user_id', currentUser.id).eq('place_id', placeId);
-    if (error) { toast('error removing saved spot'); return; }
-    saved.delete(placeId);
-    toast('removed from saved');
-  } else {
-    const { error } = await sb.from('saved_places')
-      .insert({ user_id: currentUser.id, place_id: placeId });
-    if (error) { toast('error saving spot'); return; }
-    saved.add(placeId);
-    toast('★ saved!');
+async function sharePlace(p) {
+  const url = `${location.origin}/place.html?id=${p.id}`;
+  pendingShareTextMain = buildShareTextMain(p);
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: p.name || 'Sleeping spot', text: pendingShareTextMain, url });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
   }
-  const prefix = ctx === 'mob' ? 'mob-' : '';
-  const btn = document.getElementById(prefix + 'save-btn');
-  if (btn) {
-    btn.classList.toggle('saved', saved.has(placeId));
-    btn.textContent = saved.has(placeId) ? '★ SAVED' : '☆ SAVE';
-  }
+  // fallback — показываем inline кнопки
+  const fb = document.getElementById('share-fallback-' + p.id);
+  if (fb) fb.style.display = 'flex';
 }
 
-async function loadVisited() {
-  if (!currentUser) return;
-  const { data } = await sb.from('visited_places').select('place_id').eq('user_id', currentUser.id);
-  visited.clear();
-  if (data) data.forEach(r => visited.add(r.place_id));
+function shareToXMain(p) {
+  const text = pendingShareTextMain || buildShareTextMain(p);
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 }
 
-async function toggleVisited(placeId, ctx) {
-  if (!currentUser) { openAuthModal(); return; }
-  const isVisited = visited.has(placeId);
-  if (isVisited) {
-    const { error } = await sb.from('visited_places')
-      .delete().eq('user_id', currentUser.id).eq('place_id', placeId);
-    if (error) { toast('error removing visited'); return; }
-    visited.delete(placeId);
-    toast('removed from visited');
-  } else {
-    const { error } = await sb.from('visited_places')
-      .insert({ user_id: currentUser.id, place_id: placeId });
-    if (error) { toast('error marking visited'); return; }
-    visited.add(placeId);
-    toast('✦ marked as visited!');
-  }
-  const prefix = ctx === 'mob' ? 'mob-' : '';
-  const btn = document.getElementById(prefix + 'visited-btn');
-  if (btn) {
-    btn.classList.toggle('visited', visited.has(placeId));
-    btn.textContent = visited.has(placeId) ? '✓ VISITED' : '✦ MARK VISITED';
-  }
-}
-
-// ── COMMENTS ──
-let commentCooldown = false;
-
-async function commentAuthorName(user) {
-  if (!user) return 'anon';
-  // пробуем взять display_name из profiles
-  const { data } = await sb.from('profiles').select('display_name').eq('id', user.id).single();
-  if (data?.display_name) return data.display_name;
-  const wallet = user.user_metadata?.address;
-  if (wallet) return wallet.slice(0,6) + '…' + wallet.slice(-4);
-  if (user.email) return user.email.split('@')[0];
-  return 'anon';
-}
-
-async function loadComments(placeId, ctx) {
-  const prefix = ctx === 'mob' ? 'mob' : 'desk';
-  const listEl  = document.getElementById(prefix + '-comments-list');
-  const countEl = document.getElementById(prefix + '-comments-count');
-  const formEl  = document.getElementById(prefix + '-comments-form');
-  const authEl  = document.getElementById(prefix + '-comments-auth');
-  if (!listEl) return;
-
-  listEl.innerHTML = '<div class="comments-loading">loading...</div>';
-
-  const { data, error } = await sb
-    .from('place_comments')
-    .select('id, author_name, text, created_at')
-    .eq('place_id', placeId)
-    .order('created_at', { ascending: true })
-    .limit(20);
-
-  if (error) { listEl.innerHTML = '<div class="comments-empty">could not load comments</div>'; return; }
-
-  if (countEl) countEl.textContent = data.length ? `(${data.length})` : '';
-  listEl.innerHTML = data.length
-    ? data.map(c => `
-        <div class="comment-item">
-          <div class="comment-meta">
-            <span class="comment-author">${esc(c.author_name)}</span>
-            <span class="comment-time">${formatCommentTime(c.created_at)}</span>
-          </div>
-          <div class="comment-text">${esc(c.text)}</div>
-        </div>`).join('')
-    : '<div class="comments-empty">no comments yet — be the first degen</div>';
-
-  // form visibility
-  if (currentUser) {
-    if (formEl) formEl.style.display = 'block';
-    if (authEl) authEl.style.display = 'none';
-  } else {
-    if (formEl) formEl.style.display = 'none';
-    if (authEl) authEl.style.display = 'block';
-  }
-}
-
-function formatCommentTime(ts) {
-  const d = new Date(ts);
-  const diff = (Date.now() - d) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
-  return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-}
-
-async function submitComment(placeId, ctx) {
-  if (!currentUser) { openAuthModal(); return; }
-  if (commentCooldown) { toast('ser — wait a bit between comments'); return; }
-
-  const prefix = ctx === 'mob' ? 'mob' : 'desk';
-  const inputEl  = document.getElementById(prefix + '-comment-input');
-  const submitEl = document.getElementById(prefix + '-comment-submit');
-  const text = inputEl?.value.trim();
-  if (!text) return;
-  if (text.length > 500) { toast('comment too long — 500 chars max'); return; }
-
-  if (submitEl) { submitEl.disabled = true; submitEl.textContent = '...'; }
-
-  const author_name = await commentAuthorName(currentUser);
-  const { error } = await sb.from('place_comments').insert({
-    place_id: placeId,
-    user_id: currentUser.id,
-    author_name,
-    text
+function copyLinkMain(id) {
+  const url = `${location.origin}/place.html?id=${id}`;
+  navigator.clipboard.writeText(url).then(() => toast('Link copied 🛌')).catch(() => {
+    const el = document.createElement('input');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('Link copied 🛌');
   });
-
-  if (error) {
-    const msg = error.message?.includes('rate_limit_exceeded')
-      ? 'ser — too many comments, slow down'
-      : 'error posting comment';
-    toast(msg);
-    if (submitEl) { submitEl.disabled = false; submitEl.textContent = 'POST'; }
-    return;
-  }
-
-  if (inputEl) inputEl.value = '';
-  const charsEl = document.getElementById(prefix + '-comment-chars');
-  if (charsEl) charsEl.textContent = '500';
-  if (submitEl) { submitEl.disabled = false; submitEl.textContent = 'POST'; }
-
-  // cooldown 30s
-  commentCooldown = true;
-  if (submitEl) submitEl.disabled = true;
-  setTimeout(() => {
-    commentCooldown = false;
-    const el = document.getElementById(prefix + '-comment-submit');
-    if (el) el.disabled = false;
-  }, 30000);
-
-  await loadComments(placeId, ctx);
-  toast('comment posted 🛌');
-}
-
-// ── COORD PARSER + MINIMAP ──
-let minimapInstance = null;
-let minimapMarker  = null;
-
-function parseCoordPaste(val) {
-  const m = val.replace(/\s+/g, ' ').match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
-  if (!m) return;
-  const lat = parseFloat(m[1]);
-  const lng = parseFloat(m[2]);
-  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
-  document.getElementById('f-lat').value = lat.toFixed(6);
-  document.getElementById('f-lng').value = lng.toFixed(6);
-  showMinimap(lat, lng);
-  checkNearbyDups(lat, lng);
-}
-
-function onCoordManual() {
-  const lat = parseFloat(document.getElementById('f-lat').value);
-  const lng = parseFloat(document.getElementById('f-lng').value);
-  if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-    showMinimap(lat, lng);
-    checkNearbyDups(lat, lng);
-  }
-}
-
-function checkNearbyDups(lat, lng) {
-  const RADIUS_DEG = 0.003; // ~300м
-  const nearby = PLACES.filter(p =>
-    Math.abs(p.lat - lat) < RADIUS_DEG && Math.abs(p.lng - lng) < RADIUS_DEG
-  );
-  const warn = document.getElementById('f-dup-warning');
-  if (!warn) return;
-  if (nearby.length) {
-    warn.innerHTML = '⚠ Similar spots nearby: ' +
-      nearby.slice(0, 3).map(p => `<b>${esc(p.name)}</b>`).join(', ') +
-      '. Check before submitting.';
-    warn.classList.add('show');
-  } else {
-    warn.classList.remove('show');
-  }
-}
-
-function showMinimap(lat, lng) {
-  const wrap = document.getElementById('f-minimap');
-  wrap.classList.add('show');
-  if (!wrap.querySelector('#f-minimap-map')) {
-    wrap.innerHTML = '<div id="f-minimap-map"></div><div class="minimap-cross">+</div>';
-  }
-  if (!minimapInstance) {
-    minimapInstance = new mapboxgl.Map({
-      container: 'f-minimap-map',
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [lng, lat],
-      zoom: 12,
-      interactive: true
-    });
-    minimapInstance.on('move', () => {
-      const c = minimapInstance.getCenter();
-      document.getElementById('f-lat').value = c.lat.toFixed(6);
-      document.getElementById('f-lng').value = c.lng.toFixed(6);
-    });
-  } else {
-    minimapInstance.setCenter([lng, lat]);
-  }
-}
-
-// ── PENDING BANNER ──
-async function initPendingBanner() {
-  const banner = document.getElementById('pending-banner');
-  if (!banner || !currentUser) return;
-  const { count } = await sb
-    .from('places')
-    .select('id', { count: 'exact', head: true })
-    .eq('created_by', currentUser.id)
-    .eq('status', 'pending');
-  if (count > 0) banner.classList.add('show');
-  else banner.classList.remove('show');
-}
-
-function showPendingBanner() {
-  // вызываем реальную проверку вместо localStorage-флага
-  initPendingBanner();
-}
-
-// ── CHAT COOLDOWN ──
-let chatCooldown = false;
-
-function setChatCooldown(ms) {
-  chatCooldown = true;
-  const btn = document.getElementById('chat-send');
-  if (btn) btn.disabled = true;
-  setTimeout(() => {
-    chatCooldown = false;
-    if (btn) btn.disabled = false;
-  }, ms);
 }
 
 // ── TOAST ──
