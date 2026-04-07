@@ -185,6 +185,7 @@ async function loadPlaces() {
     const canApprove = p.status !== 'approved';
     const canHide    = p.status !== 'hidden';
     return `<tr data-id="${esc(p.id)}">
+      <td>${p.photo_url ? `<img src="${esc(p.photo_url)}" style="width:40px;height:40px;object-fit:cover;display:block;border:1px solid #2a2a2a">` : '<span style="color:#444;font-size:10px">—</span>'}</td>
       <td class="td-name">${p.gold ? '★ ' : ''}${esc(p.name)}</td>
       <td class="td-city">${esc(p.city)}</td>
       <td class="td-type" style="color:${col}">${esc(p.type)}</td>

@@ -341,8 +341,18 @@ map.on('load', async () => {
       photo_url: p.photo_url || null
     }));
   }
-  buildMarkers(); renderList(); updateStats(); initChat(); initPendingBanner();
-  if (currentUser) { loadSaved(); loadVisited(); }
+  buildMarkers(); renderList(); updateStats(); initChat();
+  if (currentUser) { loadSaved(); loadVisited(); initPendingBanner(); }
+  // deep link: /?spot=UUID
+  const spotParam = new URLSearchParams(window.location.search).get('spot');
+  if (spotParam) {
+    const p = PLACES.find(x => x.id === spotParam);
+    if (p) {
+      map.flyTo({ center: [p.lng, p.lat], zoom: 12, duration: 800, essential: true });
+      if (isMobile()) setTimeout(() => openMobDetail(p), 900);
+      else setTimeout(() => sel(p.id, false), 900);
+    }
+  }
 });
 map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
 
@@ -771,7 +781,13 @@ async function sendChat() {
   container.appendChild(msgEl);
   container.scrollTop = container.scrollHeight;
   const { error } = await sb.from('chat_messages').insert({ text, author_name: name, anon_id: ANON_ID });
-  if (error) { msgEl.remove(); toast('message not saved — check connection'); }
+  if (error) {
+    msgEl.remove();
+    const msg = error.message?.includes('rate_limit_exceeded')
+      ? 'ser — too many messages, slow down'
+      : 'message not saved — check connection';
+    toast(msg);
+  }
 }
 
 // ── MODAL (add spot — gated) ──
@@ -1083,7 +1099,6 @@ let minimapInstance = null;
 let minimapMarker  = null;
 
 function parseCoordPaste(val) {
-  // форматы: "48.8566, 2.3522" / "48.8566,2.3522" / "48.8566 2.3522"
   const m = val.replace(/\s+/g, ' ').match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
   if (!m) return;
   const lat = parseFloat(m[1]);
@@ -1092,6 +1107,7 @@ function parseCoordPaste(val) {
   document.getElementById('f-lat').value = lat.toFixed(6);
   document.getElementById('f-lng').value = lng.toFixed(6);
   showMinimap(lat, lng);
+  checkNearbyDups(lat, lng);
 }
 
 function onCoordManual() {
@@ -1099,6 +1115,24 @@ function onCoordManual() {
   const lng = parseFloat(document.getElementById('f-lng').value);
   if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
     showMinimap(lat, lng);
+    checkNearbyDups(lat, lng);
+  }
+}
+
+function checkNearbyDups(lat, lng) {
+  const RADIUS_DEG = 0.003; // ~300м
+  const nearby = PLACES.filter(p =>
+    Math.abs(p.lat - lat) < RADIUS_DEG && Math.abs(p.lng - lng) < RADIUS_DEG
+  );
+  const warn = document.getElementById('f-dup-warning');
+  if (!warn) return;
+  if (nearby.length) {
+    warn.innerHTML = '⚠ Similar spots nearby: ' +
+      nearby.slice(0, 3).map(p => `<b>${esc(p.name)}</b>`).join(', ') +
+      '. Check before submitting.';
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
   }
 }
 
@@ -1127,19 +1161,21 @@ function showMinimap(lat, lng) {
 }
 
 // ── PENDING BANNER ──
-const PENDING_KEY = 'sbf_has_pending';
-
-function showPendingBanner() {
-  localStorage.setItem(PENDING_KEY, '1');
+async function initPendingBanner() {
   const banner = document.getElementById('pending-banner');
-  if (banner) { banner.classList.add('show'); }
+  if (!banner || !currentUser) return;
+  const { count } = await sb
+    .from('places')
+    .select('id', { count: 'exact', head: true })
+    .eq('created_by', currentUser.id)
+    .eq('status', 'pending');
+  if (count > 0) banner.classList.add('show');
+  else banner.classList.remove('show');
 }
 
-function initPendingBanner() {
-  if (localStorage.getItem(PENDING_KEY)) {
-    const banner = document.getElementById('pending-banner');
-    if (banner) banner.classList.add('show');
-  }
+function showPendingBanner() {
+  // вызываем реальную проверку вместо localStorage-флага
+  initPendingBanner();
 }
 
 // ── CHAT COOLDOWN ──
