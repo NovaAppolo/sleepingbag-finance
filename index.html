@@ -67,8 +67,14 @@
   <div id="map-wrap">
     <div id="map"></div>
 
-    <!-- SEARCH OVERLAY (expanded) — must be in map-wrap to escape sidebar overflow:hidden -->
+    <!-- SEARCH OVERLAY (spotlight style, fixed centered) -->
     <div id="search-overlay" class="search-collapsed">
+      <div id="sp-search-bar-wrap">
+        <span id="sp-search-icon">⌕</span>
+        <input id="sp-search-bar" type="text" placeholder="search spots, cities..." autocomplete="off" oninput="onSpotlightInput(this.value)">
+        <button id="sp-search-clear-btn" onclick="clearSearch()" style="display:none">✕</button>
+        <button id="sp-close-btn" onclick="collapseSearch()">ESC</button>
+      </div>
       <div id="sp-filters">
         <div class="sp-filter-group">
           <div class="sp-filter-label">TYPE</div>
@@ -304,6 +310,8 @@
     </div>
   </div>
 </div>
+
+<div id="search-dim"></div>
 
 <div id="toast"></div>
 

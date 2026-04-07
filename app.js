@@ -654,9 +654,9 @@ function clearSearch() {
   searchSafetyMin = 0;
   searchActiveTags.clear();
   searchTypeFilter = 'all';
-  const inputs = [document.getElementById('search-input'), document.getElementById('mob-search-input')];
+  const inputs = [document.getElementById('search-input'), document.getElementById('mob-search-input'), document.getElementById('sp-search-bar')];
   inputs.forEach(i => { if (i) i.value = ''; });
-  const clearBtns = [document.getElementById('search-clear'), document.getElementById('mob-search-clear')];
+  const clearBtns = [document.getElementById('search-clear'), document.getElementById('mob-search-clear'), document.getElementById('sp-search-clear-btn')];
   clearBtns.forEach(b => { if (b) b.style.display = 'none'; });
   // reset pills
   document.querySelectorAll('#sp-type-pills .sp-pill, #mob-type-pills .sp-pill').forEach(b => b.classList.toggle('on', b.dataset.type === 'all'));
@@ -669,18 +669,34 @@ function expandSearch() {
   if (searchExpanded) return;
   searchExpanded = true;
   buildTagPills();
-  const overlay = document.getElementById('search-overlay');
-  overlay.classList.remove('search-collapsed');
-  overlay.classList.add('search-expanded');
+  document.getElementById('search-overlay').classList.remove('search-collapsed');
+  document.getElementById('search-overlay').classList.add('search-expanded');
+  document.getElementById('search-dim').classList.add('active');
+  // sync big input value from sidebar input
+  const sidebarVal = document.getElementById('search-input').value;
+  const bigInput = document.getElementById('sp-search-bar');
+  bigInput.value = sidebarVal;
+  document.getElementById('sp-search-clear-btn').style.display = sidebarVal ? 'block' : 'none';
+  setTimeout(() => bigInput.focus(), 30);
   renderSearchResults();
 }
 
 function collapseSearch() {
   if (!searchExpanded) return;
   searchExpanded = false;
-  const overlay = document.getElementById('search-overlay');
-  overlay.classList.remove('search-expanded');
-  overlay.classList.add('search-collapsed');
+  document.getElementById('search-overlay').classList.remove('search-expanded');
+  document.getElementById('search-overlay').classList.add('search-collapsed');
+  document.getElementById('search-dim').classList.remove('active');
+  // sync sidebar input value back from big input
+  const bigVal = document.getElementById('sp-search-bar').value;
+  document.getElementById('search-input').value = bigVal;
+}
+
+function onSpotlightInput(val) {
+  // syncs big input → sidebar input → search logic
+  document.getElementById('search-input').value = val;
+  document.getElementById('sp-search-clear-btn').style.display = val ? 'block' : 'none';
+  onSearchInput(val);
 }
 
 function expandMobSearch() {
@@ -769,8 +785,9 @@ document.getElementById('mob-safety-pills')?.addEventListener('click', e => {
   applySearch();
 });
 
-// close on Esc / click outside
+// close on Esc / click outside / dim click
 document.addEventListener('keydown', e => { if (e.key === 'Escape') collapseSearch(); });
+document.getElementById('search-dim').addEventListener('click', () => collapseSearch());
 document.addEventListener('click', e => {
   if (!searchExpanded) return;
   const inside = e.target.closest('#search-overlay') || e.target.closest('#search-row');
