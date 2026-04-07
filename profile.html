@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SleepingBag.finance — Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="profile.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <a href="/" id="logo">SleepingBag<span>.finance</span></a>
+  <div class="h-right">
+    <a href="/" class="h-btn">← MAP</a>
+    <button class="h-btn" id="signout-btn" style="display:none" onclick="doSignOut()">SIGN OUT</button>
+  </div>
+</div>
+
+<!-- STATE: loading -->
+<div id="state-loading">
+  <div style="color:var(--text-dim);font-size:12px">loading...</div>
+</div>
+
+<!-- STATE: not authenticated -->
+<div id="state-noauth" style="display:none">
+  <div class="state-title">Sign in to view your profile</div>
+  <div style="color:var(--text-dim);font-size:12px">your spots, comments and identity — all in one place</div>
+  <a href="/" class="state-btn" style="text-decoration:none;display:inline-block;padding:11px 24px">GO TO MAP →</a>
+</div>
+
+<!-- PROFILE PAGE -->
+<div id="profile-page">
+
+  <!-- IDENTITY CARD -->
+  <div class="p-card">
+    <div class="p-card-head">
+      <div class="p-card-title">Identity</div>
+      <button class="p-edit-trigger" onclick="toggleEditForm()">EDIT</button>
+    </div>
+    <div class="p-card-body">
+      <div class="p-identity">
+        <div class="p-avatar" id="p-avatar">?</div>
+        <div class="p-identity-info">
+          <div class="p-display-name" id="p-display-name">—</div>
+          <div class="p-handle" id="p-handle"></div>
+          <div id="p-bio-wrap">
+            <div class="p-bio-empty" id="p-bio-empty" style="display:none">no bio yet</div>
+            <div class="p-bio" id="p-bio"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT FORM -->
+      <div class="p-edit-form" id="p-edit-form">
+        <div>
+          <label class="p-label">Display Name <span style="color:var(--text-dim);font-weight:400">(max 40 chars)</span></label>
+          <input class="p-input" id="p-edit-name" type="text" maxlength="40" placeholder="rektoor.eth">
+          <div class="p-char-hint"><span id="p-name-chars">40</span> left</div>
+        </div>
+        <div>
+          <label class="p-label">Bio <span style="color:var(--text-dim);font-weight:400">(optional · max 160 chars)</span></label>
+          <textarea class="p-textarea" id="p-edit-bio" maxlength="160" placeholder="survived 7 bear markets. currently at Odaiba."></textarea>
+          <div class="p-char-hint"><span id="p-bio-chars">160</span> left</div>
+        </div>
+        <div class="p-edit-row">
+          <button class="p-cancel-btn" onclick="toggleEditForm()">CANCEL</button>
+          <button class="p-save-btn" id="p-save-btn" onclick="saveProfile()">SAVE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MY SPOTS -->
+  <div class="p-card">
+    <div class="p-card-head">
+      <div class="p-card-title">My Spots</div>
+      <span id="p-spots-count" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+    <div class="p-card-body" id="p-spots-body">
+      <div class="p-loading">loading...</div>
+    </div>
+  </div>
+
+  <!-- MY COMMENTS -->
+  <div class="p-card">
+    <div class="p-card-head">
+      <div class="p-card-title">My Comments</div>
+      <span id="p-comments-count" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+    <div class="p-card-body" id="p-comments-body">
+      <div class="p-loading">loading...</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="profile.js"></script>
+</body>
+</html>

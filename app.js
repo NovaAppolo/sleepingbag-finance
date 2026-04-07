@@ -174,7 +174,7 @@ function updateAuthUI() {
         : 'anon';
     const inner =
       '<span class="auth-ind-dot on"></span>' +
-      '<span class="auth-ind-label">' + esc(label) + '</span>' +
+      '<a class="auth-ind-label" href="/profile.html">' + esc(label) + '</a>' +
       '<button class="auth-ind-out" onclick="signOut()">sign out</button>';
     if (indicator) { indicator.innerHTML = inner; indicator.classList.add('visible'); }
     if (mobRow) { mobRow.innerHTML = inner; mobRow.classList.add('visible'); }
@@ -889,8 +889,11 @@ async function submitPlace() {
 // ── COMMENTS ──
 let commentCooldown = false;
 
-function commentAuthorName(user) {
+async function commentAuthorName(user) {
   if (!user) return 'anon';
+  // пробуем взять display_name из profiles
+  const { data } = await sb.from('profiles').select('display_name').eq('id', user.id).single();
+  if (data?.display_name) return data.display_name;
   const wallet = user.user_metadata?.address;
   if (wallet) return wallet.slice(0,6) + '…' + wallet.slice(-4);
   if (user.email) return user.email.split('@')[0];
@@ -960,7 +963,7 @@ async function submitComment(placeId, ctx) {
 
   if (submitEl) { submitEl.disabled = true; submitEl.textContent = '...'; }
 
-  const author_name = commentAuthorName(currentUser);
+  const author_name = await commentAuthorName(currentUser);
   const { error } = await sb.from('place_comments').insert({
     place_id: placeId,
     user_id: currentUser.id,
