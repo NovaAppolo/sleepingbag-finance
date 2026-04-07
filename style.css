@@ -732,7 +732,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
 }
+.auth-ind-label:hover { color: var(--gold); }
 .auth-ind-out {
   background: none;
   border: none;

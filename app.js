@@ -151,7 +151,18 @@ let currentUser = null;
 async function initAuth() {
   const { data: { session } } = await sb.auth.getSession();
   currentUser = session?.user ?? null;
+
+  // wallet restore: если session жива и есть ethereum — синхронизируем walletAddress
+  if (currentUser?.user_metadata?.address && window.ethereum) {
+    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accounts.length) {
+      walletProvider = walletProvider || new ethers.BrowserProvider(window.ethereum);
+      walletAddress = accounts[0];
+    }
+  }
+
   updateAuthUI();
+  updateWalletBtn();
 
   sb.auth.onAuthStateChange((_event, session) => {
     currentUser = session?.user ?? null;
@@ -174,7 +185,7 @@ function updateAuthUI() {
         : 'anon';
     const inner =
       '<span class="auth-ind-dot on"></span>' +
-      '<span class="auth-ind-label">' + esc(label) + '</span>' +
+      '<a class="auth-ind-label" href="profile.html">' + esc(label) + '</a>' +
       '<button class="auth-ind-out" onclick="signOut()">sign out</button>';
     if (indicator) { indicator.innerHTML = inner; indicator.classList.add('visible'); }
     if (mobRow) { mobRow.innerHTML = inner; mobRow.classList.add('visible'); }
