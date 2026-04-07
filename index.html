@@ -51,16 +51,50 @@
 
   <!-- DESKTOP SIDEBAR -->
   <div id="sidebar">
-    <div id="sidebar-top">Rekt Atlas</div>
-    <div id="filter-row">
-      <button class="fbtn on" onclick="setFilter('all',this,'desktop')">ALL</button>
-      <button class="fbtn" onclick="setFilter('rooftop',this,'desktop')">ROOF</button>
-      <button class="fbtn" onclick="setFilter('beach',this,'desktop')">BEACH</button>
-      <button class="fbtn" onclick="setFilter('park',this,'desktop')">PARK</button>
-      <button class="fbtn" onclick="setFilter('forest',this,'desktop')">FOREST</button>
-      <button class="fbtn" onclick="setFilter('bridge',this,'desktop')">BRIDGE</button>
+    <div id="search-row">
+      <span id="search-atlas-label">REKT ATLAS</span>
+      <div id="search-input-wrap">
+        <span id="search-icon">⌕</span>
+        <input id="search-input" type="text" placeholder="search spots, cities..." autocomplete="off" onfocus="expandSearch()" oninput="onSearchInput(this.value)">
+        <button id="search-clear" onclick="clearSearch()" style="display:none">✕</button>
+      </div>
     </div>
     <div id="list"></div>
+  </div>
+
+  <!-- SEARCH EXPANDED OVERLAY (desktop) -->
+  <div id="search-overlay" class="search-collapsed">
+    <div id="search-panel">
+      <div id="sp-filters">
+        <div class="sp-filter-group">
+          <div class="sp-filter-label">TYPE</div>
+          <div class="sp-pills" id="sp-type-pills">
+            <button class="sp-pill on" data-type="all">ALL</button>
+            <button class="sp-pill" data-type="rooftop">ROOF</button>
+            <button class="sp-pill" data-type="beach">BEACH</button>
+            <button class="sp-pill" data-type="park">PARK</button>
+            <button class="sp-pill" data-type="forest">FOREST</button>
+            <button class="sp-pill" data-type="bridge">BRIDGE</button>
+          </div>
+        </div>
+        <div class="sp-filter-group">
+          <div class="sp-filter-label">SAFETY</div>
+          <div class="sp-pills" id="sp-safety-pills">
+            <button class="sp-pill on" data-safety="0">ANY</button>
+            <button class="sp-pill" data-safety="3">3+</button>
+            <button class="sp-pill" data-safety="4">4+</button>
+            <button class="sp-pill" data-safety="5">5 ✦</button>
+          </div>
+        </div>
+        <div class="sp-filter-group">
+          <div class="sp-filter-label">TAGS</div>
+          <div class="sp-pills" id="sp-tag-pills"></div>
+        </div>
+      </div>
+      <div id="sp-results-wrap">
+        <div id="sp-results"></div>
+      </div>
+    </div>
   </div>
 
   <!-- MAP -->
@@ -123,13 +157,30 @@
     <div id="mob-spot-count"><b id="mob-stat-spots">0</b> spots</div>
   </div>
   <div id="mob-auth-row"></div>
-  <div id="mob-filter-row">
-    <button class="mob-fbtn on" onclick="setFilter('all',this,'mobile')">ALL</button>
-    <button class="mob-fbtn" onclick="setFilter('rooftop',this,'mobile')">ROOF</button>
-    <button class="mob-fbtn" onclick="setFilter('beach',this,'mobile')">BEACH</button>
-    <button class="mob-fbtn" onclick="setFilter('park',this,'mobile')">PARK</button>
-    <button class="mob-fbtn" onclick="setFilter('forest',this,'mobile')">FOREST</button>
-    <button class="mob-fbtn" onclick="setFilter('bridge',this,'mobile')">BRIDGE</button>
+  <div id="mob-search-row">
+    <div id="mob-search-wrap">
+      <span class="mob-search-icon">⌕</span>
+      <input id="mob-search-input" type="text" placeholder="search spots, cities..." autocomplete="off" oninput="onSearchInput(this.value)" onfocus="expandMobSearch()" onblur="setTimeout(handleMobSearchBlur,150)">
+      <button id="mob-search-clear" onclick="clearSearch()" style="display:none">✕</button>
+      <button id="mob-search-collapse" onclick="collapseMobSearch()" style="display:none">↓</button>
+    </div>
+  </div>
+  <div id="mob-filter-row" style="display:none">
+    <div class="sp-pills" id="mob-type-pills">
+      <button class="sp-pill on" data-type="all">ALL</button>
+      <button class="sp-pill" data-type="rooftop">ROOF</button>
+      <button class="sp-pill" data-type="beach">BEACH</button>
+      <button class="sp-pill" data-type="park">PARK</button>
+      <button class="sp-pill" data-type="forest">FOREST</button>
+      <button class="sp-pill" data-type="bridge">BRIDGE</button>
+    </div>
+    <div class="sp-pills" id="mob-safety-pills">
+      <button class="sp-pill on" data-safety="0">ANY</button>
+      <button class="sp-pill" data-safety="3">3+</button>
+      <button class="sp-pill" data-safety="4">4+</button>
+      <button class="sp-pill" data-safety="5">5 ✦</button>
+    </div>
+    <div class="sp-pills" id="mob-tag-pills"></div>
   </div>
   <div id="mob-list"></div>
 </div>

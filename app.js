@@ -324,6 +324,13 @@ let drawerExpanded = false;
 let chatOpen = false;
 const isMobile = () => window.innerWidth <= 768;
 
+// search state
+let searchQuery = '';
+let searchSafetyMin = 0;
+let searchActiveTags = new Set();
+let searchTypeFilter = 'all';
+let searchExpanded = false;
+
 const tcol = t => ({ rooftop:'#c8a96e', beach:'#4a9e6a', park:'#4a9e6a', forest:'#4a9e6a', bridge:'#e84040', other:'#888' }[t] || '#888');
 const safe_lbl = ['','extremely rekt','risky ser','degen approved','comfy homeless','ultra safe (tokyo tier)'];
 
@@ -422,7 +429,7 @@ popupEl.addEventListener('click', e => e.stopPropagation());
 function buildMarkers() {
   Object.values(markers).forEach(m => m.marker.remove());
   markers = {};
-  const arr = filter === 'all' ? PLACES : PLACES.filter(p => p.type === filter);
+  const arr = getFilteredPlaces();
   arr.forEach(p => {
     const col = tcol(p.type);
     const size = p.gold ? 15 : 11;
@@ -561,24 +568,210 @@ async function doVote(id) {
   toast('▲ Voted! WAGMI fren 🛌');
 }
 
+// ── SEARCH / FILTER ──
+function getFilteredPlaces() {
+  return PLACES.filter(p => {
+    if (searchTypeFilter !== 'all' && p.type !== searchTypeFilter) return false;
+    if (searchSafetyMin && p.safety < searchSafetyMin) return false;
+    if (searchActiveTags.size && ![...searchActiveTags].every(t => (p.tags||[]).includes(t))) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!(p.name||'').toLowerCase().includes(q) && !(p.city||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function getTopTags(n = 10) {
+  const freq = {};
+  PLACES.forEach(p => (p.tags||[]).forEach(t => { freq[t] = (freq[t]||0) + 1; }));
+  return Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,n).map(([t]) => t);
+}
+
+function buildTagPills() {
+  const tags = getTopTags(10);
+  const make = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = tags.map(t =>
+      `<button class="sp-pill sp-tag-pill${searchActiveTags.has(t)?' on':''}" data-tag="${esc(t)}">#${esc(t)}</button>`
+    ).join('');
+    el.onclick = e => {
+      const btn = e.target.closest('.sp-tag-pill');
+      if (!btn) return;
+      const tag = btn.dataset.tag;
+      if (searchActiveTags.has(tag)) searchActiveTags.delete(tag);
+      else searchActiveTags.add(tag);
+      btn.classList.toggle('on', searchActiveTags.has(tag));
+      applySearch();
+    };
+  };
+  make('sp-tag-pills');
+  make('mob-tag-pills');
+}
+
+function applySearch() {
+  hidePopup();
+  if (selId) desel();
+  buildMarkers();
+  renderList();
+  if (searchExpanded) renderSearchResults();
+}
+
+function onSearchInput(val) {
+  searchQuery = val.trim();
+  const clearBtns = [document.getElementById('search-clear'), document.getElementById('mob-search-clear')];
+  clearBtns.forEach(b => { if (b) b.style.display = searchQuery ? 'block' : 'none'; });
+  applySearch();
+}
+
+function clearSearch() {
+  searchQuery = '';
+  searchSafetyMin = 0;
+  searchActiveTags.clear();
+  searchTypeFilter = 'all';
+  const inputs = [document.getElementById('search-input'), document.getElementById('mob-search-input')];
+  inputs.forEach(i => { if (i) i.value = ''; });
+  const clearBtns = [document.getElementById('search-clear'), document.getElementById('mob-search-clear')];
+  clearBtns.forEach(b => { if (b) b.style.display = 'none'; });
+  // reset pills
+  document.querySelectorAll('#sp-type-pills .sp-pill, #mob-type-pills .sp-pill').forEach(b => b.classList.toggle('on', b.dataset.type === 'all'));
+  document.querySelectorAll('#sp-safety-pills .sp-pill, #mob-safety-pills .sp-pill').forEach(b => b.classList.toggle('on', b.dataset.safety === '0'));
+  document.querySelectorAll('.sp-tag-pill').forEach(b => b.classList.remove('on'));
+  applySearch();
+}
+
+function expandSearch() {
+  if (searchExpanded) return;
+  searchExpanded = true;
+  buildTagPills();
+  const overlay = document.getElementById('search-overlay');
+  overlay.classList.remove('search-collapsed');
+  overlay.classList.add('search-expanded');
+  renderSearchResults();
+}
+
+function collapseSearch() {
+  if (!searchExpanded) return;
+  searchExpanded = false;
+  const overlay = document.getElementById('search-overlay');
+  overlay.classList.remove('search-expanded');
+  overlay.classList.add('search-collapsed');
+}
+
+function expandMobSearch() {
+  const fr = document.getElementById('mob-filter-row');
+  const collapseBtn = document.getElementById('mob-search-collapse');
+  if (fr) { fr.style.display = 'flex'; buildTagPills(); }
+  if (collapseBtn) collapseBtn.style.display = 'block';
+  if (!drawerExpanded) { drawerExpanded = true; document.getElementById('mob-drawer').classList.add('expanded'); }
+}
+
+function collapseMobSearch() {
+  const fr = document.getElementById('mob-filter-row');
+  const collapseBtn = document.getElementById('mob-search-collapse');
+  const input = document.getElementById('mob-search-input');
+  if (fr) fr.style.display = 'none';
+  if (collapseBtn) collapseBtn.style.display = 'none';
+  if (input) input.blur();
+}
+
+function handleMobSearchBlur() {
+  if (!searchQuery) collapseMobSearch();
+}
+
+function renderSearchResults() {
+  const results = getFilteredPlaces().sort((a,b) => b.votes - a.votes);
+  const el = document.getElementById('sp-results');
+  if (!el) return;
+  if (!results.length) {
+    el.innerHTML = '<div class="sp-empty">no spots found, ser 🛌<br><span>try different filters</span></div>';
+    return;
+  }
+  const dots = n => Array(5).fill(0).map((_,i) => `<div class="sp-dot${i<n?' on':''}"></div>`).join('');
+  el.innerHTML = results.map(p => `
+    <div class="sp-card" data-id="${esc(p.id)}">
+      <div class="sp-card-row1">
+        <div class="sp-card-name">${p.gold?'★ ':''}${esc(p.name)}</div>
+        <div class="ctag t-${p.type}">${p.type}</div>
+      </div>
+      <div class="sp-card-city">${esc(p.city)}</div>
+      <div class="sp-card-row2">
+        <div class="sp-dots">${dots(p.safety)}</div>
+        <div class="sp-votes"><b>${p.votes}</b> votes</div>
+      </div>
+    </div>`).join('');
+  el.onclick = e => {
+    const card = e.target.closest('.sp-card');
+    if (!card) return;
+    collapseSearch();
+    sel(card.dataset.id, true);
+  };
+}
+
+// type pill clicks — desktop
+document.getElementById('sp-type-pills')?.addEventListener('click', e => {
+  const btn = e.target.closest('.sp-pill');
+  if (!btn || !btn.dataset.type) return;
+  searchTypeFilter = btn.dataset.type;
+  document.querySelectorAll('#sp-type-pills .sp-pill').forEach(b => b.classList.toggle('on', b === btn));
+  applySearch();
+});
+
+// type pill clicks — mobile
+document.getElementById('mob-type-pills')?.addEventListener('click', e => {
+  const btn = e.target.closest('.sp-pill');
+  if (!btn || !btn.dataset.type) return;
+  searchTypeFilter = btn.dataset.type;
+  document.querySelectorAll('#mob-type-pills .sp-pill').forEach(b => b.classList.toggle('on', b === btn));
+  applySearch();
+});
+
+// safety pill clicks — desktop
+document.getElementById('sp-safety-pills')?.addEventListener('click', e => {
+  const btn = e.target.closest('.sp-pill');
+  if (!btn || btn.dataset.safety === undefined) return;
+  searchSafetyMin = parseInt(btn.dataset.safety);
+  document.querySelectorAll('#sp-safety-pills .sp-pill').forEach(b => b.classList.toggle('on', b === btn));
+  applySearch();
+});
+
+// safety pill clicks — mobile
+document.getElementById('mob-safety-pills')?.addEventListener('click', e => {
+  const btn = e.target.closest('.sp-pill');
+  if (!btn || btn.dataset.safety === undefined) return;
+  searchSafetyMin = parseInt(btn.dataset.safety);
+  document.querySelectorAll('#mob-safety-pills .sp-pill').forEach(b => b.classList.toggle('on', b === btn));
+  applySearch();
+});
+
+// close on Esc / click outside
+document.addEventListener('keydown', e => { if (e.key === 'Escape') collapseSearch(); });
+document.addEventListener('click', e => {
+  if (!searchExpanded) return;
+  const inside = e.target.closest('#search-overlay') || e.target.closest('#search-row');
+  if (!inside) collapseSearch();
+});
+
 // ── LIST ──
 function renderList() {
-  const arr = filter === 'all' ? PLACES : PLACES.filter(p => p.type === filter);
-  const sorted = [...arr].sort((a,b) => b.votes - a.votes);
+  const arr = getFilteredPlaces().sort((a,b) => b.votes - a.votes);
   const dots = n => Array(5).fill(0).map((_,i) => `<div class="sd${i<n?' on':''}"></div>`).join('');
-  const makeHtml = (mob) => sorted.map(p => `
+  const makeHtml = (mob) => {
+    if (!arr.length) return `<div class="list-empty">no spots found, ser 🛌<br><span>try different filters</span></div>`;
+    return arr.map(p => `
     <div class="card${p.id===selId?' active':''}" data-id="${esc(p.id)}" data-mob="${mob}">
       <div class="card-row1"><div class="card-name">${p.gold?'★ ':''}${esc(p.name)}</div><div class="ctag t-${p.type}">${p.type}</div></div>
       <div class="card-city">${esc(p.city)}</div>
       <div class="card-row2"><div class="sdots">${dots(p.safety)}</div><div class="cvotes"><b>${p.votes}</b> votes</div></div>
     </div>`).join('');
+  };
 
   const listEl = document.getElementById('list');
   const mobListEl = document.getElementById('mob-list');
   listEl.innerHTML = makeHtml(false);
   mobListEl.innerHTML = makeHtml(true);
 
-  // event delegation — работает с UUID
   listEl.onclick = e => {
     const card = e.target.closest('.card');
     if (!card) return;
@@ -608,15 +801,10 @@ function updateStats() {
   document.getElementById('mob-stat-spots').textContent = PLACES.length;
 }
 
-// ── FILTER ──
+// ── FILTER (legacy compat — now proxies to search state) ──
 function setFilter(type, btn, ctx) {
-  filter = type;
-  if (ctx === 'desktop') {
-    document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
-  } else {
-    document.querySelectorAll('.mob-fbtn').forEach(b => b.classList.remove('on'));
-  }
-  btn.classList.add('on');
+  searchTypeFilter = type;
+  filter = type; // keep legacy var in sync
   hidePopup();
   if (selId) desel();
   buildMarkers();
