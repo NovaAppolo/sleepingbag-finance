@@ -350,8 +350,9 @@ map.on('load', async () => {
     }));
   }
   buildMarkers(); renderList(); updateStats(); initChat();
+  showWelcome();
 });
-map.on('click', () => { hidePopup(); if (!isMobile()) desel(); });
+map.on('click', () => { dismissWelcome(); hidePopup(); if (!isMobile()) desel(); });
 
 // ── XSS PROTECTION ──
 function esc(str) {
@@ -827,6 +828,29 @@ async function submitPlace() {
   document.getElementById('f-photo-label').textContent = 'Choose photo';
   setSafety(3);
   sub.textContent = 'APE IN — ADD SPOT'; sub.disabled = false;
+}
+
+// ── WELCOME OVERLAY ──
+function shouldShowWelcome() {
+  if (new URLSearchParams(location.search).has('spot')) return false;
+  return !localStorage.getItem('sbf_welcomed');
+}
+
+function showWelcome() {
+  if (!shouldShowWelcome()) return;
+  // динамически подставляем число spots
+  const countEl = document.getElementById('welcome-spots-count');
+  if (countEl) countEl.textContent = PLACES.length || '';
+  document.getElementById('welcome-overlay')?.classList.remove('hidden');
+}
+
+function dismissWelcome() {
+  const el = document.getElementById('welcome-overlay');
+  if (!el || el.classList.contains('hidden')) return;
+  localStorage.setItem('sbf_welcomed', '1');
+  el.classList.add('hidden');
+  // убираем из DOM после transition
+  setTimeout(() => { el.style.display = 'none'; }, 320);
 }
 
 // ── SHARE ──

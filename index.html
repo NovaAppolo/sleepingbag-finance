@@ -66,6 +66,24 @@
   <!-- MAP -->
   <div id="map-wrap">
     <div id="map"></div>
+
+    <!-- WELCOME OVERLAY -->
+    <div id="welcome-overlay" class="hidden">
+      <div id="welcome-box">
+        <div id="welcome-ticker">
+          <span class="wt-dot"></span>
+          <span class="wt-dot"></span>
+          <span class="wt-dot"></span>
+          <span id="welcome-spots-count"></span> SPOTS LIVE
+        </div>
+        <div id="welcome-headline">NGMI?<br>sleep first.</div>
+        <div id="welcome-sub">A global map of sleeping spots<br>for degens, drifters and the down bad.</div>
+        <div id="welcome-actions">
+          <button id="welcome-primary" onclick="dismissWelcome()">SHOW ME THE SPOTS →</button>
+          <button id="welcome-secondary" onclick="dismissWelcome()">i'm already cooked</button>
+        </div>
+      </div>
+    </div>
     <div id="popup">
       <div class="popup-box" id="popup-box">
         <div id="pb-photo" class="pb-photo"></div>
@@ -211,27 +229,19 @@
         <label class="fl">Tags (comma-separated)</label>
         <input class="fi" id="f-tags" placeholder="wifi, no-police, scenic, rain-proof">
       </div>
-      <div class="fg">
-        <label class="fl">Location</label>
-        <input class="fi" id="f-coord-paste" placeholder="Paste from Google Maps: 48.8566, 2.3522" oninput="parseCoordPaste(this.value)">
-        <div class="fhint" style="margin-bottom:8px">Right-click on Google Maps → copy coordinates → paste here</div>
-        <div id="f-minimap"></div>
-        <div class="frow" style="margin-top:8px">
-          <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001" oninput="onCoordManual()"></div>
-          <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng" type="number" placeholder="2.35" step="0.0001" oninput="onCoordManual()"></div>
-        </div>
-        <div id="f-dup-warning" class="f-dup-warning"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Longitude</label><input class="fi" id="f-lng" type="number" placeholder="2.35" step="0.0001"></div>
+        <div class="fg"><label class="fl">Latitude</label><input class="fi" id="f-lat" type="number" placeholder="48.85" step="0.0001"></div>
       </div>
+      <div class="fhint" style="margin-bottom:12px">Google Maps → right click → first line = coordinates</div>
       <div class="fg">
         <label class="fl">Photo <span style="color:var(--red)">*required</span></label>
         <label class="f-photo-wrap" id="f-photo-wrap">
           <span id="f-photo-label">Choose photo</span>
-          <input type="file" id="f-photo" accept="image/jpeg,image/png,image/webp" onchange="onPhotoChange(this)">
+          <input type="file" id="f-photo" accept="image/*" onchange="onPhotoChange(this)">
         </label>
         <div class="fhint">max 5MB · jpg / png / webp</div>
-        <div id="f-photo-preview"></div>
       </div>
-      <div id="pending-banner">⏳ You have a spot pending review. We'll add it to the map once approved.</div>
       <button id="fsub" onclick="submitPlace()">APE IN — ADD SPOT</button>
     </div>
   </div>

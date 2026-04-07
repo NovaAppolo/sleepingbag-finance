@@ -247,42 +247,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #vote-count { font-size: 14px; font-weight: 700; }
 #vote-count span { font-size: 10px; color: var(--text-dim); font-weight: 400; }
 
-.d-share-row {
-  padding: 10px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.d-share-btn {
-  background: none;
-  border: 1px solid var(--border2);
-  color: var(--text-dim);
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 7px 14px;
-  cursor: pointer;
-  letter-spacing: .5px;
-  transition: all .15s;
-  white-space: nowrap;
-}
-.d-share-btn:hover { border-color: var(--gold); color: var(--gold); }
-.d-share-sub {
-  flex: 1;
-  background: none;
-  border: 1px solid var(--border2);
-  color: var(--text-dim);
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 7px 10px;
-  cursor: pointer;
-  letter-spacing: .5px;
-  transition: all .15s;
-  text-align: center;
-}
-.d-share-sub:hover { border-color: var(--gold); color: var(--gold); }
-
 /* ══════════════════════════════
    MOBILE BOTTOM DRAWER
 ══════════════════════════════ */
@@ -732,10 +696,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-decoration: none;
-  cursor: pointer;
 }
-.auth-ind-label:hover { color: var(--gold); }
 .auth-ind-out {
   background: none;
   border: none;
@@ -792,4 +753,165 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   background-position: center;
   background-repeat: no-repeat;
   flex-shrink: 0;
+}
+
+/* ── AUTH INDICATOR (profile link) ── */
+.auth-ind-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+.auth-ind-label:hover { color: var(--gold); }
+
+/* ── SHARE ROW (detail panels) ── */
+.d-share-row {
+  padding: 10px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.d-share-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.d-share-btn:hover { border-color: var(--gold); color: var(--gold); }
+.d-share-sub {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 7px 10px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: all .15s;
+  text-align: center;
+}
+.d-share-sub:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── WELCOME OVERLAY ── */
+#welcome-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10,10,10,0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  transition: opacity .3s;
+  pointer-events: auto;
+}
+#welcome-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#welcome-box {
+  max-width: 420px;
+  width: calc(100% - 40px);
+  padding: 36px 32px 32px;
+  background: var(--panel);
+  border: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+#welcome-ticker {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--green);
+  margin-bottom: 22px;
+}
+.wt-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 1.4s infinite;
+}
+.wt-dot:nth-child(2) { animation-delay: .2s; }
+.wt-dot:nth-child(3) { animation-delay: .4s; }
+
+#welcome-headline {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 36px;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: -0.5px;
+}
+
+#welcome-sub {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+
+#welcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#welcome-primary {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 14px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: opacity .15s;
+  text-align: center;
+}
+#welcome-primary:hover { opacity: .85; }
+
+#welcome-secondary {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  padding: 6px;
+  cursor: pointer;
+  letter-spacing: .5px;
+  text-align: center;
+  transition: color .15s;
+}
+#welcome-secondary:hover { color: var(--text); }
+
+@media (max-width: 768px) {
+  #welcome-box {
+    padding: 28px 22px 24px;
+    max-width: 100%;
+    width: calc(100% - 32px);
+  }
+  #welcome-headline { font-size: 28px; }
+  #welcome-sub { font-size: 12px; }
 }
