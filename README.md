@@ -16,7 +16,7 @@ Your leveraged longs are liquidated. Your landlord wants rent. Your bags are emp
 
 We made a map.
 
-SleepingBag.finance is a community atlas of outdoor sleeping spots for rekt crypto degens — beaches, parks, rooftops, bridges — rated by safety, tagged by people who actually slept there, sorted by survival count.
+SleepingBag.finance is a community atlas of outdoor sleeping spots for rekt crypto degens — beaches, parks, rooftops, bridges — rated by safety, tagged by people who actually slept there, voted on by the ones who survived.
 
 **Two types of users. Same desperation.**
 
@@ -33,9 +33,10 @@ Both welcome. Judging no one.
 - Read the field report from fellow degens
 - Check the safety rating (1 = extremely rekt → 5 = tokyo tier)
 - Vote if you survived
+- Save the ones you want. Mark the ones you've slept at.
 - Add your own spot when you find one
 
-No sign up. No KYC. Just coordinates and vibes.
+Wallet or email to post. No login to lurk.
 
 ---
 
@@ -51,18 +52,20 @@ No sign up. No KYC. Just coordinates and vibes.
 
 ---
 
-## Roadmap
+**Live. Real spots. Real degens. Map's open.**
 
-- [x] Interactive map with 15+ spots worldwide
-- [x] Field reports, safety ratings, community voting
-- [x] Global chat — no auth, just talk
-- [x] Mobile layout
-- [ ] Real database — spots survive refresh
-- [ ] Wallet connect — your spots, your profile
+---
+
+## What's next (maybe)
+
+- [ ] Comments and conversations on every spot
+- [ ] Sleeper reputation — show who actually slept where
 - [ ] Zora integration — every spot mints a coin. hold the coin = you were there.
 - [ ] Smart contracts on Base — bet on spots, own them as NFTs
 - [ ] ???
 - [ ] WAGMI
+
+No promises. No token. No points farm. No pitch deck. If any of the above happens, it'll be because it made the map better, not because it made a deck better.
 
 ---
 
@@ -79,4 +82,4 @@ We built this for both.
 
 *NGMI. But at least you'll have a place to sleep.*
 
-*Built by [@NovaAppolo](https://twitter.com/NovaAppolo) and Claude (CTO).*
+*Built by [@NovaAppolo](https://twitter.com/NovaAppolo), Claude (CTO), and ChatGPT.*
